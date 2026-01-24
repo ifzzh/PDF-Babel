@@ -108,7 +108,7 @@
   "items": [
     {
       "job_id": "uuid",
-      "folder_name": "20260124-120000_paper",
+      "folder_name": "paper",
       "created_at": "2026-01-24T12:00:00+08:00",
       "status": "finished",
       "has_mono": true,
@@ -120,7 +120,8 @@
 ```
 
 说明：
-- `folder_name` 为后端生成的展示字符串，规则：`YYYYMMDD-HHMMSS_{原文件名stem}`
+- `folder_name` 为后端生成的展示字符串，规则：`{原文件名stem}`  
+- 若同名冲突，后端可追加短后缀，例如 `paper_a1b2`  
 - 前端只展示，不做解析与改写
 
 ### 2.1 渠道定义（/api/channels）
