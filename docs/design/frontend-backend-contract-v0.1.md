@@ -15,6 +15,7 @@
    - `GET /api/files/{file_id}`  
    - `POST /api/jobs/{id}/cancel`  
    - `GET /api/channels`
+   - `PATCH /api/jobs/{id}`  
    - 可新增扩展接口，但不得修改上述接口语义
 
 2) **SSE 事件结构固定**  
@@ -48,6 +49,13 @@
 9) **持久化存储根目录固定**  
    - 根目录固定为：`/mnt/raid1/babeldoc-data`  
    - 结果文件夹均创建在该目录下
+
+10) **命名与重命名规则固定**  
+   - 文件夹名默认使用 PDF 文件名的 stem  
+   - 仅允许对 `finished/failed/canceled` 状态的任务进行重命名  
+   - 重命名冲突时：后端生成带时间后缀的建议名并返回  
+   - 前端需让用户确认后再提交  
+   - 后端记录 `renamed_at`（北京时间）
 
 如需调整上述任一条，必须升级版本号（例如 v0.2）并同步前后端变更。
 
@@ -96,6 +104,7 @@
 - `GET /api/files/{file_id}`：下载/预览 PDF（支持 Range）
 - `POST /api/jobs/{id}/cancel`：取消任务
 - `GET /api/channels`：获取渠道定义（平台/自定义/不支持）
+- `PATCH /api/jobs/{id}`：修改文件夹名 / 原始文件名
  
 ### 2.2 可选扩展接口（v0.1 推荐）
 
@@ -110,6 +119,7 @@
       "job_id": "uuid",
       "folder_name": "paper",
       "created_at": "2026-01-24T12:00:00+08:00",
+      "renamed_at": null,
       "status": "finished",
       "has_mono": true,
       "has_dual": true
@@ -289,19 +299,53 @@
     "file_id": "uuid",
     "type": "mono|dual|glossary",
     "watermark": "watermarked|no_watermark|none",
-    "filename": "paper.zh.mono.pdf",
+    "filename": "mono.pdf",
     "size": 12345678,
     "url": "/api/files/uuid"
   }
 ]
 ```
 
+说明：
+- 原文件保留原始文件名（如 `Kua.pdf`）  
+- mono/dual 输出文件命名为 `mono.pdf` / `dual.pdf`
+
 ## 6. 预览/下载
 
 - `GET /api/files/{file_id}` 支持 `Range`
 - 前端可直接用该 URL 预览（PDF.js）
 
-## 7. 性能约定
+## 7. 重命名接口（PATCH /api/jobs/{id}）
+
+请求体（JSON）：
+
+```json
+{
+  "folder_name": "paper",
+  "original_filename": "paper.pdf",
+  "confirm": false
+}
+```
+
+规则：
+- 仅允许 `finished/failed/canceled` 状态
+- `folder_name` 与 `original_filename` 可单独或同时修改
+- 命名限制：禁止包含 `/ \\ : * ? \" < > |` 与控制字符
+- 冲突时返回 409，并提供 `suggested_*` 名称
+
+冲突响应示例：
+
+```json
+{
+  "error": "name_conflict",
+  "suggested_folder_name": "paper_20260125-011500",
+  "suggested_original_filename": "paper_20260125-011500.pdf"
+}
+```
+
+用户确认后再提交（`confirm=true`）。
+
+## 8. 性能约定
 
 - SSE 推送频率：<= 10 次/秒
 - 前端使用 rAF 合并更新
