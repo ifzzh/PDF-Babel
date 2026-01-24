@@ -29,10 +29,6 @@ def _now_iso() -> str:
     return datetime.now(tz=_TZ).isoformat(timespec="seconds")
 
 
-def _folder_timestamp() -> str:
-    return datetime.now(tz=_TZ).strftime("%Y%m%d-%H%M%S")
-
-
 def _unique_folder_name(jobs_dir: Path, base_name: str) -> str:
     candidate = base_name
     if not (jobs_dir / candidate).exists():
@@ -55,8 +51,7 @@ def create_job(
 ) -> JobRecord:
     safe_name = Path(original_filename).name
     stem = Path(safe_name).stem or "document"
-    folder_base = f"{_folder_timestamp()}_{stem}"
-    folder_name = _unique_folder_name(jobs_dir, folder_base)
+    folder_name = _unique_folder_name(jobs_dir, stem)
     job_dir = jobs_dir / folder_name
     job_dir.mkdir(parents=True, exist_ok=False)
     original_path = job_dir / safe_name
