@@ -90,3 +90,45 @@ curl -sSf http://127.0.0.1:8000/api/channels | jq .
 
 - **模块找不到**：
   - 确认已激活虚拟环境：`source .venv/bin/activate`
+
+## 8. 验证第六步（create_job）
+
+使用本地测试文件夹 `/home/ifzzh/Project/PDF-Babel/test-pdf` 中的 PDF：
+
+```bash
+source .venv/bin/activate
+python - <<'PY'
+from pathlib import Path
+from backend.config import settings
+from backend.storage import ensure_storage
+from backend.db import init_db
+from backend.jobs import create_job
+
+storage = ensure_storage(settings)
+init_db(settings.db_path)
+
+pdf_path = Path("/home/ifzzh/Project/PDF-Babel/test-pdf/Kua.pdf")
+record = create_job(
+    settings,
+    storage["jobs"],
+    pdf_path.name,
+    pdf_path.read_bytes(),
+)
+
+print("job_id:", record.id)
+print("folder:", record.folder_name)
+print("file exists:", (storage["jobs"]/record.folder_name/pdf_path.name).exists())
+PY
+```
+
+然后检查数据库记录：
+
+```bash
+sqlite3 /mnt/raid1/babeldoc-data/db/db.sqlite3 \
+  "select id, folder_name, status from jobs order by created_at desc limit 1;"
+```
+
+期望：
+- `file exists: True`
+- 最后一条 job 状态为 `queued`
+
