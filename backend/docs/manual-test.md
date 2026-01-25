@@ -18,6 +18,12 @@ source .venv/bin/activate
 uv pip install fastapi uvicorn
 ```
 
+测试上传接口（/api/jobs）需要额外安装 `python-multipart`：
+
+```bash
+uv pip install python-multipart
+```
+
 如果你更倾向于跟随项目依赖（可能较慢）：
 
 ```bash
@@ -82,7 +88,28 @@ curl -sSf http://127.0.0.1:8000/api/channels | jq .
 
 期望：返回 `platform/custom/unsupported` 三个字段；`platform` 中只有 DeepSeek 且 `enabled=false`；每个条目包含 `visible`。
 
-## 8. 常见问题
+## 8. 验证 /api/jobs 创建与查询
+
+创建任务（注意：`source` 使用自定义渠道，值可为示例 dummy）：\n
+
+```bash
+curl -sSf -X POST http://127.0.0.1:8000/api/jobs \\
+  -F "file=@/home/ifzzh/Project/PDF-Babel/test-pdf/Kua.pdf" \\
+  -F 'options={"lang_in":"en","lang_out":"zh"}' \\
+  -F 'source={"mode":"custom","channel_id":"openai","credentials":{"api_key":"dummy","model":"gpt-4o-mini"}}'
+```
+
+期望：返回 `job_id` / `status` / `created_at`。\n
+
+查询任务：\n
+
+```bash
+curl -sSf http://127.0.0.1:8000/api/jobs/{job_id} | jq .
+```
+
+期望：能看到 `folder_name` 与 `original_filename`。
+
+## 9. 常见问题
 
 - **端口无法绑定**：
   - 换用其他端口，例如 `--port 8010`
@@ -131,4 +158,3 @@ sqlite3 /mnt/raid1/babeldoc-data/db/db.sqlite3 \
 期望：
 - `file exists: True`
 - 最后一条 job 状态为 `queued`
-
