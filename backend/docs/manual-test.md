@@ -182,7 +182,18 @@ curl -sSf -X PATCH http://127.0.0.1:8000/api/jobs/02757bac-6856-4af6-a4e9-401a46
 ls -la /mnt/raid1/babeldoc-data/jobs/KuaRenamed
 ```
 
-## 11. 常见问题
+## 11. 验证 /api/jobs/{id}/files
+
+```bash
+curl -sSf http://127.0.0.1:8000/api/jobs/02757bac-6856-4af6-a4e9-401a46c98ecd/files | jq .
+```
+
+期望：返回数组，至少包含 `type=original` 的记录。
+
+若返回空数组，说明该 job 可能创建于旧版本（未写入 files 记录）。\n
+可再次调用该接口，它会尝试自动补建 `original` 记录（前提是原文件仍在目录内）。\n
+
+## 12. 常见问题
 
 - **端口无法绑定**：
   - 换用其他端口，例如 `--port 8010`
