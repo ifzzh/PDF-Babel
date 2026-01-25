@@ -11,6 +11,7 @@ from backend.channels import get_channels
 from backend.db import init_db
 from backend.jobs import create_job
 from backend.jobs import get_job_by_id
+from backend.jobs import list_jobs
 from backend.storage import ensure_storage
 
 app = FastAPI()
@@ -98,6 +99,40 @@ def get_job(job_id: str):
         "updated_at": record.updated_at,
         "folder_name": record.folder_name,
         "original_filename": record.original_filename,
+    }
+
+
+@app.get("/api/jobs")
+def list_jobs_endpoint(
+    created_from: str | None = None,
+    created_to: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+):
+    if limit < 1 or limit > 200:
+        raise HTTPException(status_code=400, detail="invalid limit")
+    if offset < 0:
+        raise HTTPException(status_code=400, detail="invalid offset")
+    items, total = list_jobs(
+        app.state.settings,
+        created_from=created_from,
+        created_to=created_to,
+        limit=limit,
+        offset=offset,
+    )
+    return {
+        "items": [
+            {
+                "job_id": job.id,
+                "folder_name": job.folder_name,
+                "created_at": job.created_at,
+                "status": job.status,
+                "has_mono": False,
+                "has_dual": False,
+            }
+            for job in items
+        ],
+        "total": total,
     }
 
 

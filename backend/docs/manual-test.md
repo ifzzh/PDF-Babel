@@ -117,7 +117,21 @@ curl -sSf http://127.0.0.1:8000/api/jobs/{job_id} | jq .
 
 期望：能看到 `folder_name` 与 `original_filename`。
 
-## 9. 常见问题
+## 9. 验证 /api/jobs 历史列表
+
+```bash
+curl -sSf \"http://127.0.0.1:8000/api/jobs?limit=10&offset=0\" | jq .
+```
+
+可选：按时间筛选（北京时间 ISO 8601）：\n
+
+```bash
+curl -sSf \"http://127.0.0.1:8000/api/jobs?created_from=2026-01-25T00:00:00%2B08:00\" | jq .
+```
+
+期望：返回 `items` 和 `total`，items 按 `created_at` 降序。
+
+## 10. 常见问题
 
 - **端口无法绑定**：
   - 换用其他端口，例如 `--port 8010`

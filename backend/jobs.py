@@ -126,3 +126,48 @@ def get_job_by_id(settings: Settings, job_id: str) -> JobRecord | None:
         source_json=row[7],
         error=row[8],
     )
+
+
+def list_jobs(
+    settings: Settings,
+    created_from: str | None = None,
+    created_to: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> tuple[list[JobRecord], int]:
+    clauses = []
+    params: list = []
+    if created_from:
+        clauses.append("created_at >= ?")
+        params.append(created_from)
+    if created_to:
+        clauses.append("created_at <= ?")
+        params.append(created_to)
+    where_sql = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    count_sql = f"SELECT COUNT(1) FROM jobs {where_sql}"
+    list_sql = (
+        "SELECT id, folder_name, original_filename, created_at, updated_at, "
+        "status, options_json, source_json, error "
+        f"FROM jobs {where_sql} ORDER BY created_at DESC LIMIT ? OFFSET ?"
+    )
+    conn = sqlite3.connect(settings.db_path)
+    try:
+        total = conn.execute(count_sql, params).fetchone()[0]
+        rows = conn.execute(list_sql, [*params, limit, offset]).fetchall()
+    finally:
+        conn.close()
+    items = [
+        JobRecord(
+            id=row[0],
+            folder_name=row[1],
+            original_filename=row[2],
+            created_at=row[3],
+            updated_at=row[4],
+            status=row[5],
+            options_json=row[6],
+            source_json=row[7],
+            error=row[8],
+        )
+        for row in rows
+    ]
+    return items, total
