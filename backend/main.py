@@ -13,6 +13,8 @@ from backend.jobs import create_job
 from backend.jobs import get_job_by_id
 from backend.jobs import list_jobs
 from backend.jobs import rename_job
+from backend.files import create_file_record
+from backend.files import list_files_by_job
 from backend.storage import ensure_storage
 
 app = FastAPI()
@@ -178,6 +180,39 @@ def rename_job_endpoint(job_id: str, payload: dict):
         "renamed_at": record.renamed_at,
         "updated_at": record.updated_at,
     }
+
+
+@app.get("/api/jobs/{job_id}/files")
+def get_job_files(job_id: str):
+    record = get_job_by_id(app.state.settings, job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="job not found")
+    files = list_files_by_job(app.state.settings, job_id)
+    if not files:
+        original_path = (
+            app.state.storage["jobs"] / record.folder_name / record.original_filename
+        )
+        if original_path.exists():
+            create_file_record(
+                app.state.settings,
+                job_id=record.id,
+                file_type="original",
+                watermark="none",
+                filename=record.original_filename,
+                path=original_path,
+            )
+            files = list_files_by_job(app.state.settings, job_id)
+    return [
+        {
+            "file_id": f.id,
+            "type": f.type,
+            "watermark": f.watermark,
+            "filename": f.filename,
+            "size": f.size,
+            "url": f"/api/files/{f.id}",
+        }
+        for f in files
+    ]
 
 
 @app.on_event("startup")

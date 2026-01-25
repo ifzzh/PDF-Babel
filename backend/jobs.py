@@ -8,6 +8,7 @@ from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 from backend.config import Settings
+from backend.files import create_file_record
 
 _TZ = ZoneInfo("Asia/Shanghai")
 _INVALID_CHARS = set('/\\:*?"<>|')
@@ -140,6 +141,15 @@ def create_job(
         conn.commit()
     finally:
         conn.close()
+
+    create_file_record(
+        settings,
+        job_id=record.id,
+        file_type="original",
+        watermark="none",
+        filename=safe_name,
+        path=original_path,
+    )
 
     return record
 
