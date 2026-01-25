@@ -113,6 +113,26 @@ def get_job(job_id: str):
     }
 
 
+@app.post("/api/jobs/{job_id}/run")
+def run_job(job_id: str):
+    from backend.translator import TranslationError
+    from backend.translator import run_translation_job
+
+    try:
+        result = run_translation_job(
+            app.state.settings, app.state.storage, job_id
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except TranslationError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    return result
+
+
 @app.get("/api/jobs")
 def list_jobs_endpoint(
     created_from: str | None = None,

@@ -184,6 +184,31 @@ def get_job_by_id(settings: Settings, job_id: str) -> JobRecord | None:
     )
 
 
+def update_job_status(
+    settings: Settings,
+    job_id: str,
+    status: str,
+    error: str | None = None,
+) -> JobRecord | None:
+    updated_at = _now_iso()
+    conn = sqlite3.connect(settings.db_path)
+    try:
+        if error is None:
+            conn.execute(
+                "UPDATE jobs SET status = ?, updated_at = ? WHERE id = ?",
+                (status, updated_at, job_id),
+            )
+        else:
+            conn.execute(
+                "UPDATE jobs SET status = ?, updated_at = ?, error = ? WHERE id = ?",
+                (status, updated_at, error, job_id),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+    return get_job_by_id(settings, job_id)
+
+
 def list_jobs(
     settings: Settings,
     created_from: str | None = None,
