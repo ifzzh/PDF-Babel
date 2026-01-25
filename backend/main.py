@@ -12,6 +12,7 @@ from backend.db import init_db
 from backend.jobs import create_job
 from backend.jobs import get_job_by_id
 from backend.jobs import list_jobs
+from backend.jobs import rename_job
 from backend.storage import ensure_storage
 
 app = FastAPI()
@@ -97,6 +98,7 @@ def get_job(job_id: str):
         "status": record.status,
         "created_at": record.created_at,
         "updated_at": record.updated_at,
+        "renamed_at": record.renamed_at,
         "folder_name": record.folder_name,
         "original_filename": record.original_filename,
     }
@@ -126,6 +128,7 @@ def list_jobs_endpoint(
                 "job_id": job.id,
                 "folder_name": job.folder_name,
                 "created_at": job.created_at,
+                "renamed_at": job.renamed_at,
                 "status": job.status,
                 "has_mono": False,
                 "has_dual": False,
@@ -133,6 +136,47 @@ def list_jobs_endpoint(
             for job in items
         ],
         "total": total,
+    }
+
+
+@app.patch("/api/jobs/{job_id}")
+def rename_job_endpoint(job_id: str, payload: dict):
+    folder_name = payload.get("folder_name")
+    original_filename = payload.get("original_filename")
+    confirm = bool(payload.get("confirm", False))
+    if folder_name is None and original_filename is None:
+        raise HTTPException(status_code=400, detail="no changes provided")
+    try:
+        record, suggestions = rename_job(
+            app.state.settings,
+            app.state.storage["jobs"],
+            job_id,
+            folder_name,
+            original_filename,
+            confirm,
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    if suggestions:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "error": "name_conflict",
+                "suggested_folder_name": suggestions.get("folder_name"),
+                "suggested_original_filename": suggestions.get("original_filename"),
+            },
+        )
+    if record is None:
+        raise HTTPException(status_code=500, detail="rename failed")
+    return {
+        "job_id": record.id,
+        "folder_name": record.folder_name,
+        "original_filename": record.original_filename,
+        "renamed_at": record.renamed_at,
+        "updated_at": record.updated_at,
     }
 
 

@@ -14,6 +14,7 @@ def init_db(db_path: Path) -> None:
                 original_filename TEXT NOT NULL,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
+                renamed_at TEXT,
                 status TEXT NOT NULL,
                 options_json TEXT,
                 source_json TEXT,
@@ -41,5 +42,8 @@ def init_db(db_path: Path) -> None:
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_files_job_id ON files(job_id)"
         )
+        columns = [row[1] for row in conn.execute("PRAGMA table_info(jobs)")]
+        if "renamed_at" not in columns:
+            conn.execute("ALTER TABLE jobs ADD COLUMN renamed_at TEXT")
     finally:
         conn.close()
