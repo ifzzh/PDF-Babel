@@ -90,7 +90,15 @@ curl -sSf http://127.0.0.1:8000/api/channels | jq .
 
 ## 8. 验证 /api/jobs 创建与查询
 
-创建任务（注意：`source` 使用自定义渠道，值可为示例 dummy）：\n
+创建任务（注意：`source` 使用自定义渠道，值可为示例 dummy）：
+
+**单行写法（推荐）：**
+
+```bash
+curl -sSf -X POST http://127.0.0.1:8000/api/jobs -F "file=@/home/ifzzh/Project/PDF-Babel/test-pdf/Kua.pdf" -F 'options={"lang_in":"en","lang_out":"zh"}' -F 'source={"mode":"custom","channel_id":"openai","credentials":{"api_key":"dummy","model":"gpt-4o-mini"}}'
+```
+
+**多行写法（注意每行末尾使用单个反斜杠 `\\` 作为续行）：**
 
 ```bash
 curl -sSf -X POST http://127.0.0.1:8000/api/jobs \\
