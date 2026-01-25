@@ -96,3 +96,30 @@ def list_files_by_job(settings: Settings, job_id: str) -> list[FileRecord]:
         )
         for row in rows
     ]
+
+
+def get_file_by_id(settings: Settings, file_id: str) -> FileRecord | None:
+    conn = sqlite3.connect(settings.db_path)
+    try:
+        row = conn.execute(
+            """
+            SELECT id, job_id, type, watermark, filename, path, size, created_at
+            FROM files
+            WHERE id = ?
+            """,
+            (file_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+    if row is None:
+        return None
+    return FileRecord(
+        id=row[0],
+        job_id=row[1],
+        type=row[2],
+        watermark=row[3],
+        filename=row[4],
+        path=row[5],
+        size=row[6],
+        created_at=row[7],
+    )

@@ -1,10 +1,15 @@
 import json
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi import File
 from fastapi import Form
 from fastapi import HTTPException
+from fastapi import Request
 from fastapi import UploadFile
+from fastapi.responses import Response
+from fastapi.responses import StreamingResponse
+import re
 
 from backend.config import settings
 from backend.channels import get_channels
@@ -14,6 +19,7 @@ from backend.jobs import get_job_by_id
 from backend.jobs import list_jobs
 from backend.jobs import rename_job
 from backend.files import create_file_record
+from backend.files import get_file_by_id
 from backend.files import list_files_by_job
 from backend.storage import ensure_storage
 
@@ -207,12 +213,117 @@ def get_job_files(job_id: str):
             "file_id": f.id,
             "type": f.type,
             "watermark": f.watermark,
-            "filename": f.filename,
-            "size": f.size,
+            "filename": record.original_filename
+            if f.type == "original"
+            else f.filename,
+            "size": (
+                (
+                    (
+                        app.state.storage["jobs"]
+                        / record.folder_name
+                        / (
+                            record.original_filename
+                            if f.type == "original"
+                            else f.filename
+                        )
+                    ).stat().st_size
+                )
+                if (
+                    app.state.storage["jobs"]
+                    / record.folder_name
+                    / (
+                        record.original_filename
+                        if f.type == "original"
+                        else f.filename
+                    )
+                ).exists()
+                else f.size
+            ),
             "url": f"/api/files/{f.id}",
         }
         for f in files
     ]
+
+
+def _iter_file_range(path, start: int, end: int, chunk_size: int = 1024 * 1024):
+    with path.open("rb") as f:
+        f.seek(start)
+        remaining = end - start + 1
+        while remaining > 0:
+            chunk = f.read(min(chunk_size, remaining))
+            if not chunk:
+                break
+            remaining -= len(chunk)
+            yield chunk
+
+
+@app.get("/api/files/{file_id}")
+def download_file(file_id: str, request: Request):
+    record = get_file_by_id(app.state.settings, file_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="file not found")
+    job = get_job_by_id(app.state.settings, record.job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="job not found")
+    stem = Path(job.original_filename).stem
+    if record.type == "original":
+        download_name = job.original_filename
+        disk_name = job.original_filename
+    elif record.type == "mono":
+        download_name = f"{stem}.mono.pdf"
+        disk_name = record.filename
+    elif record.type == "dual":
+        download_name = f"{stem}.dual.pdf"
+        disk_name = record.filename
+    else:
+        download_name = record.filename
+        disk_name = record.filename
+
+    path = app.state.storage["jobs"] / job.folder_name / disk_name
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="file missing on disk")
+
+    file_size = path.stat().st_size
+    headers = {
+        "Accept-Ranges": "bytes",
+        "Content-Disposition": f'inline; filename=\"{download_name}\"',
+    }
+    range_header = request.headers.get("range")
+    if range_header:
+        match = re.match(r"bytes=(\d*)-(\d*)", range_header)
+        if not match:
+            return Response(status_code=416, headers=headers)
+        start_str, end_str = match.groups()
+        if start_str == "" and end_str == "":
+            return Response(status_code=416, headers=headers)
+        if start_str == "":
+            length = int(end_str)
+            start = max(file_size - length, 0)
+            end = file_size - 1
+        else:
+            start = int(start_str)
+            end = file_size - 1 if end_str == "" else min(int(end_str), file_size - 1)
+        if start >= file_size:
+            return Response(status_code=416, headers=headers)
+        headers.update(
+            {
+                "Content-Range": f"bytes {start}-{end}/{file_size}",
+                "Content-Length": str(end - start + 1),
+            }
+        )
+        return StreamingResponse(
+            _iter_file_range(path, start, end),
+            status_code=206,
+            media_type="application/pdf",
+            headers=headers,
+        )
+
+    headers["Content-Length"] = str(file_size)
+    return StreamingResponse(
+        _iter_file_range(path, 0, file_size - 1),
+        media_type="application/pdf",
+        headers=headers,
+    )
 
 
 @app.on_event("startup")
