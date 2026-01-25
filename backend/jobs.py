@@ -97,3 +97,32 @@ def create_job(
         conn.close()
 
     return record
+
+
+def get_job_by_id(settings: Settings, job_id: str) -> JobRecord | None:
+    conn = sqlite3.connect(settings.db_path)
+    try:
+        row = conn.execute(
+            """
+            SELECT id, folder_name, original_filename, created_at, updated_at,
+                   status, options_json, source_json, error
+            FROM jobs
+            WHERE id = ?
+            """,
+            (job_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+    if row is None:
+        return None
+    return JobRecord(
+        id=row[0],
+        folder_name=row[1],
+        original_filename=row[2],
+        created_at=row[3],
+        updated_at=row[4],
+        status=row[5],
+        options_json=row[6],
+        source_json=row[7],
+        error=row[8],
+    )
