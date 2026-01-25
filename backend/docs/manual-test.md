@@ -24,7 +24,7 @@ uv pip install fastapi uvicorn
 uv pip install python-multipart
 ```
 
-如果你更倾向于跟随项目依赖（可能较慢）：
+翻译执行（/api/jobs/{id}/run）需要完整依赖（包含 onnxruntime / openai / pymupdf 等）：
 
 ```bash
 uv pip install -e .
@@ -204,6 +204,31 @@ curl -sSf -H "Range: bytes=0-99" -D - http://127.0.0.1:8000/api/files/5b483390-6
 期望：
 - 返回 206（Partial Content）
 - `/tmp/sample.pdf` 存在且大小约 100 字节
+
+## 13. 验证翻译执行（/api/jobs/{id}/run）
+
+前置：
+- 创建任务时需提供真实可用的 `source.credentials`（API Key / Model / Base URL）。
+- 本步骤为**同步执行**，会阻塞请求直到翻译结束。
+
+执行：
+
+```bash
+curl -sSf -X POST http://127.0.0.1:8000/api/jobs/{job_id}/run | jq .
+```
+
+期望：
+- 返回 `status: "finished"`，并包含 `files` 列表。
+- 任务目录中存在 `mono.pdf` / `dual.pdf`（若未禁用对应输出）。
+
+可选检查（查看文件列表）：
+
+```bash
+curl -sSf http://127.0.0.1:8000/api/jobs/{job_id}/files | jq .
+```
+
+失败排查：
+- 若返回 500，可在数据库中查看 `jobs.error` 字段。
 
 ## 13. 常见问题
 
