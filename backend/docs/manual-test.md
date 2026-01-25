@@ -135,38 +135,52 @@ curl -sSf \"http://127.0.0.1:8000/api/jobs?created_from=2026-01-25T00:00:00%2B08
 
 前置：需要一个 `status` 为 `finished/failed/canceled` 的任务。
 
-获取最新任务的 `job_id`（也可使用 /api/jobs 列表查询）：\n
+获取最新任务的 `job_id`（也可使用 /api/jobs 列表查询）：
 
 ```bash
 curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id'
 ```
 
-可以手动在数据库里将状态改为 `finished`（仅用于测试）：\n
+可以手动在数据库里将状态改为 `finished`（仅用于测试）：
+
+**单行写法（推荐）：**
+
+```bash
+sqlite3 /mnt/raid1/babeldoc-data/db/db.sqlite3 "update jobs set status='finished' where id='YOUR_JOB_ID';"
+```
+
+**多行写法（注意每行末尾使用单个反斜杠 `\\` 作为续行）：**
 
 ```bash
 sqlite3 /mnt/raid1/babeldoc-data/db/db.sqlite3 \\
   "update jobs set status='finished' where id='YOUR_JOB_ID';"
 ```
 
-重命名测试（folder + original 文件名）：\n
+重命名测试（folder + original 文件名）：
 
 ```bash
-curl -sSf -X PATCH http://127.0.0.1:8000/api/jobs/YOUR_JOB_ID \\
-  -H 'Content-Type: application/json' \\
+curl -sSf -X PATCH http://127.0.0.1:8000/api/jobs/02757bac-6856-4af6-a4e9-401a46c98ecd \
+  -H 'Content-Type: application/json' \
   -d '{"folder_name":"KuaRenamed","original_filename":"KuaRenamed.pdf","confirm":false}' | jq .
 ```
 
-若命名冲突，将返回 409，并给出建议名；用户确认后再提交：\n
+若命名冲突，将返回 409，并给出建议名；用户确认后再提交：
 
 ```bash
-curl -sSf -X PATCH http://127.0.0.1:8000/api/jobs/YOUR_JOB_ID \\
-  -H 'Content-Type: application/json' \\
+curl -sSf -X PATCH http://127.0.0.1:8000/api/jobs/02757bac-6856-4af6-a4e9-401a46c98ecd \
+  -H 'Content-Type: application/json' \
   -d '{"folder_name":"KuaRenamed_20260125-011500","original_filename":"KuaRenamed_20260125-011500.pdf","confirm":true}' | jq .
 ```
 
-期望：\n
-- `folder_name` / `original_filename` 更新\n
-- `renamed_at` 为当前时间\n
+期望：
+- `folder_name` / `original_filename` 更新
+- `renamed_at` 为当前时间
+
+可选检查（目录与文件是否真实改名）：
+
+```bash
+ls -la /mnt/raid1/babeldoc-data/jobs/KuaRenamed
+```
 
 ## 11. 常见问题
 
