@@ -190,10 +190,22 @@ curl -sSf http://127.0.0.1:8000/api/jobs/02757bac-6856-4af6-a4e9-401a46c98ecd/fi
 
 期望：返回数组，至少包含 `type=original` 的记录。
 
-若返回空数组，说明该 job 可能创建于旧版本（未写入 files 记录）。\n
-可再次调用该接口，它会尝试自动补建 `original` 记录（前提是原文件仍在目录内）。\n
+若返回空数组，说明该 job 可能创建于旧版本（未写入 files 记录）。
+可再次调用该接口，它会尝试自动补建 `original` 记录（前提是原文件仍在目录内）。
 
-## 12. 常见问题
+## 12. 验证 /api/files/{file_id}（Range）
+
+先从上一步返回中取一个 `file_id`，测试 Range 下载：
+
+```bash
+curl -sSf -H "Range: bytes=0-99" -D - http://127.0.0.1:8000/api/files/5b483390-6465-4473-a2fd-17deddcebf8c -o /tmp/sample.pdf
+```
+
+期望：
+- 返回 206（Partial Content）
+- `/tmp/sample.pdf` 存在且大小约 100 字节
+
+## 13. 常见问题
 
 - **端口无法绑定**：
   - 换用其他端口，例如 `--port 8010`
