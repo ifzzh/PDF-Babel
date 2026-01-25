@@ -123,3 +123,23 @@ def get_file_by_id(settings: Settings, file_id: str) -> FileRecord | None:
         size=row[6],
         created_at=row[7],
     )
+
+
+def get_file_flags(
+    settings: Settings, job_ids: list[str]
+) -> dict[str, tuple[bool, bool]]:
+    if not job_ids:
+        return {}
+    placeholders = ",".join("?" for _ in job_ids)
+    sql = (
+        "SELECT job_id, "
+        "MAX(CASE WHEN type = 'mono' THEN 1 ELSE 0 END) AS has_mono, "
+        "MAX(CASE WHEN type = 'dual' THEN 1 ELSE 0 END) AS has_dual "
+        f"FROM files WHERE job_id IN ({placeholders}) GROUP BY job_id"
+    )
+    conn = sqlite3.connect(settings.db_path)
+    try:
+        rows = conn.execute(sql, job_ids).fetchall()
+    finally:
+        conn.close()
+    return {row[0]: (bool(row[1]), bool(row[2])) for row in rows}

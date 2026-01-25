@@ -20,6 +20,7 @@ from backend.jobs import list_jobs
 from backend.jobs import rename_job
 from backend.files import create_file_record
 from backend.files import get_file_by_id
+from backend.files import get_file_flags
 from backend.files import list_files_by_job
 from backend.storage import ensure_storage
 
@@ -130,6 +131,7 @@ def list_jobs_endpoint(
         limit=limit,
         offset=offset,
     )
+    flags = get_file_flags(app.state.settings, [job.id for job in items])
     return {
         "items": [
             {
@@ -138,8 +140,8 @@ def list_jobs_endpoint(
                 "created_at": job.created_at,
                 "renamed_at": job.renamed_at,
                 "status": job.status,
-                "has_mono": False,
-                "has_dual": False,
+                "has_mono": flags.get(job.id, (False, False))[0],
+                "has_dual": flags.get(job.id, (False, False))[1],
             }
             for job in items
         ],
