@@ -212,7 +212,8 @@ curl -sSf -H "Range: bytes=0-99" -D - http://127.0.0.1:8000/api/files/5b483390-6
 - 创建任务时需提供真实可用的 `source.credentials`（API Key / Model / Base URL）。
 - `/api/jobs/{id}/run` 为**异步执行**，会立即返回 `status=running`，真正完成需要等待 SSE 或轮询状态。
 - 仅允许 `status=queued` 的任务执行，若已完成需重新创建任务。
-- 可通过环境变量 `BABELDOC_MAX_RUNNING` 控制并发上限（默认 1），超限会返回 429。
+- 可通过环境变量 `BABELDOC_MAX_RUNNING` 控制并发上限（默认 1）。
+- 当并发已满时，本接口会返回 `status=queued`，任务进入队列等待执行。
 
 示例（DeepSeek 自定义渠道）：
 
@@ -322,7 +323,13 @@ curl -sSf -X POST http://127.0.0.1:8000/api/jobs/$JOB_ID_2/run | jq .
 
 期望：
 - 第一个返回 `status: running`
-- 第二个返回 429（`too many running jobs`）
+- 第二个返回 `status: queued`（进入等待队列）
+
+可用轮询确认第二个任务会在第一个完成后自动进入 `running`：
+
+```bash
+curl -sSf http://127.0.0.1:8000/api/jobs/$JOB_ID_2 | jq .
+```
 
 ## 13. 常见问题
 
