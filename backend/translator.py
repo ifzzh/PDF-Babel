@@ -294,67 +294,74 @@ def run_translation_job(
     if record.status != "queued":
         raise ValueError("job not in queued status")
 
-    update_job_status(settings, record.id, "running")
-    cancel_event = threading.Event()
-    EVENT_STORE.set_cancel_event(record.id, cancel_event)
-
     try:
-        options = _parse_json(record.options_json)
-        source = _parse_json(record.source_json)
-        if source.get("mode") != "custom":
-            raise ValueError("platform source not supported")
+        update_job_status(settings, record.id, "running")
+        cancel_event = threading.Event()
+        EVENT_STORE.set_cancel_event(record.id, cancel_event)
 
-        channel_id = _require_value(source, "channel_id")
-        credentials = source.get("credentials") or {}
+        try:
+            options = _parse_json(record.options_json)
+            source = _parse_json(record.source_json)
+            if source.get("mode") != "custom":
+                raise ValueError("platform source not supported")
 
-        lang_in = _require_value(options, "lang_in")
-        lang_out = _require_value(options, "lang_out")
+            channel_id = _require_value(source, "channel_id")
+            credentials = source.get("credentials") or {}
 
-        job_dir = storage["jobs"] / record.folder_name
-        input_path = job_dir / record.original_filename
-        if not input_path.exists():
-            raise FileNotFoundError("input file missing")
+            lang_in = _require_value(options, "lang_in")
+            lang_out = _require_value(options, "lang_out")
 
-        translator = _build_translator(
-            channel_id=channel_id,
-            lang_in=lang_in,
-            lang_out=lang_out,
-            credentials=credentials,
-        )
-        config = _prepare_config(
-            job_dir=job_dir,
-            input_path=input_path,
-            lang_in=lang_in,
-            lang_out=lang_out,
-            options=options,
-            translator=translator,
-        )
-        def _progress_callback(**kwargs):
-            event_type = kwargs.pop("type", "progress_update")
-            EVENT_STORE.append_event(record.id, event_type, kwargs)
+            job_dir = storage["jobs"] / record.folder_name
+            input_path = job_dir / record.original_filename
+            if not input_path.exists():
+                raise FileNotFoundError("input file missing")
 
-        babeldoc_init()
-        def _finish_callback(**_kwargs):
-            return
+            translator = _build_translator(
+                channel_id=channel_id,
+                lang_in=lang_in,
+                lang_out=lang_out,
+                credentials=credentials,
+            )
+            config = _prepare_config(
+                job_dir=job_dir,
+                input_path=input_path,
+                lang_in=lang_in,
+                lang_out=lang_out,
+                options=options,
+                translator=translator,
+            )
 
-        with ProgressMonitor(
-            get_translation_stage(config),
-            progress_change_callback=_progress_callback,
-            finish_callback=_finish_callback,
-            cancel_event=cancel_event,
-            report_interval=config.report_interval,
-        ) as pm:
-            result = do_translate(pm, config)
-    except CancelledError:
-        update_job_status(settings, record.id, "canceled", error="canceled")
-        EVENT_STORE.append_event(record.id, "error", {"error": "canceled"})
-        return {"job_id": record.id, "status": "canceled", "files": []}
-    except Exception as exc:
-        update_job_status(settings, record.id, "failed", error=str(exc))
-        if isinstance(exc, (ValueError, FileNotFoundError)):
-            raise
-        EVENT_STORE.append_event(record.id, "error", {"error": str(exc)})
-        raise TranslationError(str(exc)) from exc
+            def _progress_callback(**kwargs):
+                event_type = kwargs.pop("type", "progress_update")
+                EVENT_STORE.append_event(record.id, event_type, kwargs)
+
+            babeldoc_init()
+
+            def _finish_callback(**_kwargs):
+                return
+
+            with ProgressMonitor(
+                get_translation_stage(config),
+                progress_change_callback=_progress_callback,
+                finish_callback=_finish_callback,
+                cancel_event=cancel_event,
+                report_interval=config.report_interval,
+            ) as pm:
+                result = do_translate(pm, config)
+        except CancelledError:
+            update_job_status(settings, record.id, "canceled", error="canceled")
+            EVENT_STORE.append_event(
+                record.id, "error", {"error": "canceled"}
+            )
+            return {"job_id": record.id, "status": "canceled", "files": []}
+        except Exception as exc:
+            update_job_status(settings, record.id, "failed", error=str(exc))
+            if isinstance(exc, (ValueError, FileNotFoundError)):
+                raise
+            EVENT_STORE.append_event(record.id, "error", {"error": str(exc)})
+            raise TranslationError(str(exc)) from exc
+    finally:
+        EVENT_STORE.clear_running(record.id)
 
     watermark_mode = _parse_watermark_mode(options.get("watermark_output_mode"))
     watermark_label = (

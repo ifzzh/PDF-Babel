@@ -18,6 +18,7 @@ class _JobEvents:
     events: deque
     next_id: int
     cancel_event: threading.Event | None = None
+    running: bool = False
 
 
 class JobEventStore:
@@ -63,6 +64,20 @@ class JobEventStore:
             job.events.append(payload)
             job.cond.notify_all()
             return payload
+
+    def try_mark_running(self, job_id: str) -> bool:
+        job = self._ensure_job(job_id)
+        with job.cond:
+            if job.running:
+                return False
+            job.running = True
+            return True
+
+    def clear_running(self, job_id: str) -> None:
+        job = self._ensure_job(job_id)
+        with job.cond:
+            job.running = False
+            job.cond.notify_all()
 
     def wait_for_events(
         self, job_id: str, last_id: int, timeout: float

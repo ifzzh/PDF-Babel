@@ -1,4 +1,5 @@
 import json
+import threading
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from pathlib import Path
@@ -174,22 +175,26 @@ def job_events(job_id: str):
 
 @app.post("/api/jobs/{job_id}/run")
 def run_job(job_id: str):
-    from backend.translator import TranslationError
-    from backend.translator import run_translation_job
+    record = get_job_by_id(app.state.settings, job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="job not found")
+    if record.status != "queued":
+        raise HTTPException(status_code=409, detail="job not queued")
+    if not EVENT_STORE.try_mark_running(record.id):
+        raise HTTPException(status_code=409, detail="job already running")
 
-    try:
-        result = run_translation_job(
-            app.state.settings, app.state.storage, job_id
-        )
-    except LookupError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except FileNotFoundError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except TranslationError as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
-    return result
+    def _worker():
+        from backend.translator import run_translation_job
+
+        try:
+            run_translation_job(
+                app.state.settings, app.state.storage, record.id
+            )
+        except Exception:
+            return
+
+    threading.Thread(target=_worker, daemon=True).start()
+    return {"job_id": record.id, "status": "running"}
 
 
 @app.post("/api/jobs/{job_id}/cancel")
@@ -206,6 +211,7 @@ def cancel_job(job_id: str):
         EVENT_STORE.append_event(
             record.id, "error", {"error": "canceled"}
         )
+        EVENT_STORE.clear_running(record.id)
         return {"job_id": record.id, "status": "canceled"}
 
     cancel_event = EVENT_STORE.get_cancel_event(record.id)
