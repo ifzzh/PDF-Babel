@@ -1,7 +1,7 @@
-# 前端功能需求 v0.3（给 Gemini）
+# 前端功能需求 v0.4（给 Gemini）
 
 > 目标：Vue 3 前端对接 FastAPI 后端，完成 PDF 翻译任务创建、实时进度、结果预览。
-> 约束：遵循 `docs/design/frontend-backend-contract-v0.1.md` 中“不可变约定”。
+> 约束：遵循 `docs/design/frontend-backend-contract-v0.1.md` 中“不可变约定”（当前版本 v0.4）。
 
 ## 1. 页面与功能清单（必须实现）
 
@@ -63,19 +63,25 @@
 - 前端需展示 `renamed_at`（若为 null 则不显示）
 - 前端应提示：`original_filename` 不能为 `mono.pdf` 或 `dual.pdf`
 
-10) **任务队列与手动恢复**
+10) **删除任务（支持批量）**
+- 提供删除入口（需二次确认）
+- 单条删除：调用 `DELETE /api/jobs/{id}` 并携带 `confirm=true`
+- 批量删除：调用 `POST /api/jobs/delete`，提交 `{ job_ids, confirm:true }`
+- 若返回 `status=canceling` 或 `skipped.reason=canceling`，前端提示用户稍后再删
+
+11) **任务队列与手动恢复**
 - 前端需展示**当前运行任务**与**排队任务**（队列面板或历史页顶部）
 - 队列数据来自 `GET /api/queue`
 - 提供“恢复队列”按钮：调用 `POST /api/queue/resume`，请求体为 `{ "mode": "all" }`
 - 支持对单条排队任务点击“恢复此任务”：调用 `POST /api/queue/resume`，请求体为 `{ "job_ids": ["..."] }`
 - 说明：服务重启后不会自动继续执行，需要用户手动恢复
 
-11) **接口对接注意事项**
+12) **接口对接注意事项**
 - `POST /api/jobs` 使用 multipart：`options` 与 `source` 为 **JSON 字符串**（不是 JSON 对象）
 - 队列快照只返回 job_id，若需显示名称/时间，请用 `GET /api/jobs` 或 `GET /api/jobs/{id}` 补全
 - 未实现 `glossary_files` 时可暂不上传（后端允许缺省）
 
-12) **历史搜索（任务列表过滤）**
+13) **历史搜索（任务列表过滤）**
 - 搜索框输入后本地过滤（不请求新接口），建议 150-300ms debounce
 - 输入处理：`trim` 后合并多空格，再按空格拆成关键词，全部转小写
 - 匹配优先级：`display_name`（最高） > `original_filename` > `folder_name`

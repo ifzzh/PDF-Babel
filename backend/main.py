@@ -12,6 +12,7 @@ from fastapi import UploadFile
 from fastapi.responses import Response
 from fastapi.responses import StreamingResponse
 import re
+import shutil
 
 from backend.config import settings
 from backend.channels import get_channels
@@ -21,6 +22,7 @@ from backend.jobs import get_job_by_id
 from backend.jobs import list_jobs
 from backend.jobs import rename_job
 from backend.jobs import update_job_status
+from backend.jobs import delete_job_records
 from backend.files import create_file_record
 from backend.files import get_file_by_id
 from backend.files import get_file_flags
@@ -132,6 +134,14 @@ def get_job(job_id: str):
     }
 
 
+def _safe_job_dir(storage_root: Path, folder_name: str) -> Path:
+    root = storage_root.resolve()
+    job_dir = (root / folder_name).resolve()
+    if root not in job_dir.parents and job_dir != root:
+        raise RuntimeError("invalid job directory")
+    return job_dir
+
+
 @app.get("/api/jobs/{job_id}/events")
 def job_events(job_id: str):
     record = get_job_by_id(app.state.settings, job_id)
@@ -211,6 +221,81 @@ def cancel_job(job_id: str):
         raise HTTPException(status_code=409, detail="cancel_not_supported")
     cancel_event.set()
     return {"job_id": record.id, "status": "canceling"}
+
+
+@app.delete("/api/jobs/{job_id}")
+def delete_job(job_id: str, confirm: bool = False, payload: dict | None = None):
+    confirm_flag = bool(payload.get("confirm")) if payload else confirm
+    if not confirm_flag:
+        raise HTTPException(status_code=400, detail="confirm_required")
+    record = get_job_by_id(app.state.settings, job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="job not found")
+
+    if record.status == "running":
+        cancel_event = EVENT_STORE.get_cancel_event(record.id)
+        if cancel_event is None:
+            raise HTTPException(status_code=409, detail="cancel_not_supported")
+        cancel_event.set()
+        return {"job_id": record.id, "status": "canceling"}
+
+    if record.status == "queued":
+        SCHEDULER.cancel(app.state.settings, record.id)
+        queue_store.remove_job(app.state.settings, record.id)
+
+    job_dir = _safe_job_dir(app.state.storage["jobs"], record.folder_name)
+    if job_dir.exists():
+        shutil.rmtree(job_dir)
+
+    delete_job_records(app.state.settings, record.id)
+    queue_store.remove_job(app.state.settings, record.id)
+    return {"job_id": record.id, "status": "deleted"}
+
+
+@app.post("/api/jobs/delete")
+def delete_jobs(payload: dict):
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="invalid payload")
+    job_ids = payload.get("job_ids")
+    confirm = bool(payload.get("confirm", False))
+    if not confirm:
+        raise HTTPException(status_code=400, detail="confirm_required")
+    if not isinstance(job_ids, list) or not job_ids:
+        raise HTTPException(status_code=400, detail="invalid job_ids")
+
+    deleted: list[str] = []
+    skipped: list[dict[str, str]] = []
+
+    for job_id in job_ids:
+        if not isinstance(job_id, str) or not job_id:
+            skipped.append({"job_id": str(job_id), "reason": "invalid_id"})
+            continue
+        record = get_job_by_id(app.state.settings, job_id)
+        if record is None:
+            skipped.append({"job_id": job_id, "reason": "not_found"})
+            continue
+        if record.status == "running":
+            cancel_event = EVENT_STORE.get_cancel_event(record.id)
+            if cancel_event is None:
+                skipped.append({"job_id": job_id, "reason": "cancel_not_supported"})
+                continue
+            cancel_event.set()
+            skipped.append({"job_id": job_id, "reason": "canceling"})
+            continue
+
+        if record.status == "queued":
+            SCHEDULER.cancel(app.state.settings, record.id)
+            queue_store.remove_job(app.state.settings, record.id)
+
+        job_dir = _safe_job_dir(app.state.storage["jobs"], record.folder_name)
+        if job_dir.exists():
+            shutil.rmtree(job_dir)
+
+        delete_job_records(app.state.settings, record.id)
+        queue_store.remove_job(app.state.settings, record.id)
+        deleted.append(job_id)
+
+    return {"deleted": deleted, "skipped": skipped}
 
 
 @app.get("/api/queue")

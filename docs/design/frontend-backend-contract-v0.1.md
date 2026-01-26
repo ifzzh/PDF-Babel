@@ -1,4 +1,4 @@
-# 前后端契约 v0.3
+# 前后端契约 v0.4
 
 > 适用范围：BabelDOC 后端（FastAPI）+ Vue 前端（SSE 实时进度）。
 > 备注：BabelDOC 当前仅支持 OpenAI 兼容接口。非兼容渠道可展示但需标注“暂不支持”。
@@ -39,7 +39,7 @@
 6) **PDF 预览与下载固定**  
    - `GET /api/files/{file_id}` 必须支持 HTTP Range
 
-7) **平台提供渠道 v0.3 固定**  
+7) **平台提供渠道 v0.4 固定**  
    - 仅 **DeepSeek**  
    - `enabled` 由后端平台配置决定（未配置时为 `false` 并灰显）
 
@@ -62,7 +62,7 @@
    - `display_name` 仅用于展示，不影响文件或文件夹  
    - 初始化为原文件名的 stem，之后不会自动跟随文件名变化
 
-如需调整上述任一条，必须升级版本号（例如 v0.4）并同步前后端变更。
+如需调整上述任一条，必须升级版本号（例如 v0.5）并同步前后端变更。
 
 ## 1. 能力来源（翻译渠道）
 
@@ -71,7 +71,7 @@
 - **平台提供**：仅显示渠道名称，隐藏 URL/Key/Model 等字段（DeepSeek 是否可选取决于 `enabled`）
 - **自定义**：选择渠道后，显示该渠道所需字段
 
-### 1.0 平台提供策略 v0.3
+### 1.0 平台提供策略 v0.4
 
 - 仅预置 **DeepSeek**
 - `GET /api/channels` 会返回 `enabled` 与 `disabled_reason`
@@ -111,9 +111,11 @@
 - `GET /api/channels`：获取渠道定义（平台/自定义/不支持）
 - `PATCH /api/jobs/{id}`：修改文件夹名 / 原始文件名
  
-### 2.2 可选扩展接口（v0.3 推荐）
+### 2.2 可选扩展接口（v0.4 推荐）
 
 - `GET /api/jobs`：查询历史任务列表（用于“历史/文件夹”页面）
+- `DELETE /api/jobs/{id}`：删除单条任务（需 `confirm=true`）
+- `POST /api/jobs/delete`：批量删除任务（需 `confirm=true`）
 - `GET /api/queue`：查询当前队列快照（运行中/排队中）
 - `POST /api/queue/resume`：手动恢复队列执行（用于重启后/手动启动）
 
@@ -409,7 +411,54 @@
 
 用户确认后再提交（`confirm=true`）。
 
-## 8. 性能约定
+## 8. 删除任务（DELETE /api/jobs/{id}）
+
+说明：
+- 必须提供 `confirm=true`（用于二次确认）
+- `running` 任务会先触发取消并返回 `status=canceling`，需要后续再次删除
+- `queued` / `finished` / `failed` / `canceled` 可直接删除（会清理 DB 与文件夹）
+
+请求示例（带 confirm）：
+
+```bash
+curl -sSf -X DELETE "http://127.0.0.1:8000/api/jobs/{job_id}?confirm=true" | jq .
+```
+
+响应示例：
+
+```json
+{ "job_id": "uuid", "status": "deleted" }
+```
+
+若在运行中：
+
+```json
+{ "job_id": "uuid", "status": "canceling" }
+```
+
+## 9. 批量删除（POST /api/jobs/delete）
+
+请求体：
+
+```json
+{
+  "job_ids": ["uuid-1", "uuid-2"],
+  "confirm": true
+}
+```
+
+响应示例：
+
+```json
+{
+  "deleted": ["uuid-2"],
+  "skipped": [
+    { "job_id": "uuid-1", "reason": "canceling" }
+  ]
+}
+```
+
+## 10. 性能约定
 
 - SSE 推送频率：<= 10 次/秒
 - 前端使用 rAF 合并更新

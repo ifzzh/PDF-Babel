@@ -228,6 +228,17 @@ def update_job_status(
     return get_job_by_id(settings, job_id)
 
 
+def delete_job_records(settings: Settings, job_id: str) -> bool:
+    conn = sqlite3.connect(settings.db_path)
+    try:
+        conn.execute("DELETE FROM files WHERE job_id = ?", (job_id,))
+        cur = conn.execute("DELETE FROM jobs WHERE id = ?", (job_id,))
+        conn.commit()
+        return cur.rowcount > 0
+    finally:
+        conn.close()
+
+
 def list_jobs(
     settings: Settings,
     created_from: str | None = None,

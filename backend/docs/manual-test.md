@@ -233,6 +233,18 @@ JOB_ID=$(curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.i
 curl -sSf http://127.0.0.1:8000/api/jobs/$JOB_ID/files | jq .
 ```
 
+## 11.1 删除任务（单条）
+
+删除需要二次确认：必须带 `confirm=true`。
+
+```bash
+JOB_ID=$(curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id')
+curl -sSf -X DELETE "http://127.0.0.1:8000/api/jobs/$JOB_ID?confirm=true" | jq .
+```
+
+说明：
+- 若任务在运行中，返回 `status: canceling`，需稍后再次删除
+
 期望：返回数组，至少包含 `type=original` 的记录。
 
 若返回空数组，说明该 job 可能创建于旧版本（未写入 files 记录）。
