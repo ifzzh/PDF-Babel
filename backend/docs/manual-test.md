@@ -211,6 +211,17 @@ curl -sSf -H "Range: bytes=0-99" -D - http://127.0.0.1:8000/api/files/5b483390-6
 - 创建任务时需提供真实可用的 `source.credentials`（API Key / Model / Base URL）。
 - 本步骤为**同步执行**，会阻塞请求直到翻译结束。
 
+示例（DeepSeek 自定义渠道）：
+
+```bash
+curl -sSf -X POST http://127.0.0.1:8000/api/jobs \
+  -F "file=@/home/ifzzh/Project/PDF-Babel/test-pdf/Kua.pdf" \
+  -F 'options={"lang_in":"en","lang_out":"zh"}' \
+  -F 'source={"mode":"custom","channel_id":"deepseek","credentials":{"base_url":"https://api.deepseek.com/v1","api_key":"YOUR_KEY","model":"deepseek-chat"}}'
+```
+
+> 请将 `YOUR_KEY` 替换为你自己的真实 API Key（不要提交到仓库）。
+
 执行：
 
 ```bash
@@ -229,6 +240,23 @@ curl -sSf http://127.0.0.1:8000/api/jobs/{job_id}/files | jq .
 
 失败排查：
 - 若返回 500，可在数据库中查看 `jobs.error` 字段。
+
+## 14. 验证 SSE 事件流（/api/jobs/{id}/events）
+
+在一个终端保持监听：
+
+```bash
+curl -N http://127.0.0.1:8000/api/jobs/{job_id}/events
+```
+
+在另一个终端执行翻译：
+
+```bash
+curl -sSf -X POST http://127.0.0.1:8000/api/jobs/{job_id}/run | jq .
+```
+
+期望：
+- SSE 输出包含 `stage_summary` / `progress_update` / `finish`（或 `error`）
 
 ## 13. 常见问题
 

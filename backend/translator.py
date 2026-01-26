@@ -1,16 +1,20 @@
 import json
+import threading
 from pathlib import Path
 from typing import Any
 
 from babeldoc.docvision.base_doclayout import DocLayoutModel
+from babeldoc.format.pdf.high_level import do_translate
+from babeldoc.format.pdf.high_level import get_translation_stage
 from babeldoc.format.pdf.high_level import init as babeldoc_init
-from babeldoc.format.pdf.high_level import translate as babeldoc_translate
 from babeldoc.format.pdf.translation_config import TranslationConfig
 from babeldoc.format.pdf.translation_config import WatermarkOutputMode
+from babeldoc.progress_monitor import ProgressMonitor
 from babeldoc.translator.translator import OpenAITranslator
 from babeldoc.translator.translator import set_translate_rate_limiter
 
 from backend.config import Settings
+from backend.events import EVENT_STORE
 from backend.files import create_file_record
 from backend.jobs import get_job_by_id
 from backend.jobs import update_job_status
@@ -290,6 +294,8 @@ def run_translation_job(
         raise ValueError("job not in queued status")
 
     update_job_status(settings, record.id, "running")
+    cancel_event = threading.Event()
+    EVENT_STORE.set_cancel_event(record.id, cancel_event)
 
     try:
         options = _parse_json(record.options_json)
@@ -322,12 +328,23 @@ def run_translation_job(
             options=options,
             translator=translator,
         )
+        def _progress_callback(**kwargs):
+            event_type = kwargs.pop("type", "progress_update")
+            EVENT_STORE.append_event(record.id, event_type, kwargs)
+
         babeldoc_init()
-        result = babeldoc_translate(config)
+        with ProgressMonitor(
+            get_translation_stage(config),
+            progress_change_callback=_progress_callback,
+            cancel_event=cancel_event,
+            report_interval=config.report_interval,
+        ) as pm:
+            result = do_translate(pm, config)
     except Exception as exc:
         update_job_status(settings, record.id, "failed", error=str(exc))
         if isinstance(exc, (ValueError, FileNotFoundError)):
             raise
+        EVENT_STORE.append_event(record.id, "error", {"error": str(exc)})
         raise TranslationError(str(exc)) from exc
 
     watermark_mode = _parse_watermark_mode(options.get("watermark_output_mode"))
@@ -378,6 +395,7 @@ def run_translation_job(
         raise TranslationError("no output files generated")
 
     update_job_status(settings, record.id, "finished")
+    EVENT_STORE.append_event(record.id, "finish", {"status": "finished"})
 
     return {
         "job_id": record.id,

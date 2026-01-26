@@ -1,4 +1,5 @@
 import json
+import time
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -23,6 +24,7 @@ from backend.files import get_file_by_id
 from backend.files import get_file_flags
 from backend.files import list_files_by_job
 from backend.storage import ensure_storage
+from backend.events import EVENT_STORE
 
 app = FastAPI()
 app.state.settings = settings
@@ -64,6 +66,13 @@ def _validate_source(source: dict):
     if not channel.get("enabled", True):
         raise HTTPException(status_code=400, detail="channel disabled")
     return channel
+
+
+def _format_sse(event: dict) -> str:
+    data = json.dumps(event, ensure_ascii=False)
+    if "id" in event:
+        return f"id: {event['id']}\ndata: {data}\n\n"
+    return f"data: {data}\n\n"
 
 
 @app.post("/api/jobs")
@@ -111,6 +120,51 @@ def get_job(job_id: str):
         "folder_name": record.folder_name,
         "original_filename": record.original_filename,
     }
+
+
+@app.get("/api/jobs/{job_id}/events")
+def job_events(job_id: str):
+    record = get_job_by_id(app.state.settings, job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="job not found")
+
+    def _event_stream():
+        last_id = 0
+        finished = False
+        while True:
+            events = EVENT_STORE.wait_for_events(job_id, last_id, timeout=2.0)
+            if events:
+                for event in events:
+                    last_id = event["id"]
+                    yield _format_sse(event)
+                    if event.get("type") in ("finish", "error"):
+                        finished = True
+                if finished:
+                    break
+                continue
+
+            current = get_job_by_id(app.state.settings, job_id)
+            if current and current.status in ("finished", "failed", "canceled"):
+                event_type = (
+                    "finish" if current.status == "finished" else "error"
+                )
+                payload = EVENT_STORE.append_event(
+                    job_id,
+                    event_type,
+                    {"status": current.status},
+                )
+                yield _format_sse(payload)
+                break
+
+            heartbeat = {
+                "type": "heartbeat",
+                "job_id": job_id,
+                "ts": time.strftime("%Y-%m-%dT%H:%M:%S+08:00"),
+                "data": {},
+            }
+            yield _format_sse(heartbeat)
+
+    return StreamingResponse(_event_stream(), media_type="text/event-stream")
 
 
 @app.post("/api/jobs/{job_id}/run")
