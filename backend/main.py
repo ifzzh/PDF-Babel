@@ -108,8 +108,6 @@ async def create_job_endpoint(
         options_obj,
         source_obj,
     )
-    SCHEDULER.configure(app.state.settings.max_running)
-    SCHEDULER.submit(record.id, app.state.settings, app.state.storage)
     return {
         "job_id": record.id,
         "status": record.status,
