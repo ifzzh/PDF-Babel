@@ -1,4 +1,4 @@
-# 前后端契约 v0.1
+# 前后端契约 v0.3
 
 > 适用范围：BabelDOC 后端（FastAPI）+ Vue 前端（SSE 实时进度）。
 > 备注：BabelDOC 当前仅支持 OpenAI 兼容接口。非兼容渠道可展示但需标注“暂不支持”。
@@ -39,8 +39,9 @@
 6) **PDF 预览与下载固定**  
    - `GET /api/files/{file_id}` 必须支持 HTTP Range
 
-7) **平台提供渠道 v0.1 固定**  
-   - 仅 **DeepSeek**，且 `enabled=false`（灰显不可选）
+7) **平台提供渠道 v0.3 固定**  
+   - 仅 **DeepSeek**  
+   - `enabled` 由后端平台配置决定（未配置时为 `false` 并灰显）
 
 8) **时间与时区固定**  
    - 所有时间字段（`created_at` / `updated_at` / `ts`）使用北京时间（UTC+08:00）  
@@ -56,21 +57,25 @@
    - 重命名冲突时：后端生成带时间后缀的建议名并返回  
    - 前端需让用户确认后再提交  
    - 后端记录 `renamed_at`（北京时间）
+   - `original_filename` 不允许为 `mono.pdf` 或 `dual.pdf`（保留名）
+11) **展示名称固定**  
+   - `display_name` 仅用于展示，不影响文件或文件夹  
+   - 初始化为原文件名的 stem，之后不会自动跟随文件名变化
 
-如需调整上述任一条，必须升级版本号（例如 v0.2）并同步前后端变更。
+如需调整上述任一条，必须升级版本号（例如 v0.4）并同步前后端变更。
 
 ## 1. 能力来源（翻译渠道）
 
 前端提供两种模式：
 
-- **平台提供**：仅显示渠道名称，隐藏 URL/Key/Model 等字段（当前仅展示 DeepSeek，置灰不可选）
+- **平台提供**：仅显示渠道名称，隐藏 URL/Key/Model 等字段（DeepSeek 是否可选取决于 `enabled`）
 - **自定义**：选择渠道后，显示该渠道所需字段
 
-### 1.0 平台提供策略 v0.1
+### 1.0 平台提供策略 v0.3
 
-- 仅预置 **DeepSeek**，但 **不可选**（前端灰显）
-- `GET /api/channels` 会返回 `enabled=false` 与 `disabled_reason`
-- 前端需据此禁用点击，并显示原因提示（例如“暂未开放”）
+- 仅预置 **DeepSeek**
+- `GET /api/channels` 会返回 `enabled` 与 `disabled_reason`
+- 若 `enabled=false`，前端需禁用点击并显示原因提示（例如“缺少平台配置”）
 
 ### 1.1 OpenAI 兼容（后端可直接支持）
 
@@ -98,7 +103,7 @@
 ## 2. 接口清单
 
 - `POST /api/jobs`：上传 PDF + 选项，创建任务
-- `GET /api/jobs/{id}`：查询任务状态/进度
+- `GET /api/jobs/{id}`：查询任务状态/进度（包含 `display_name`）
 - `GET /api/jobs/{id}/events`：SSE 实时进度事件
 - `GET /api/jobs/{id}/files`：获取输出文件列表
 - `GET /api/files/{file_id}`：下载/预览 PDF（支持 Range）
@@ -106,7 +111,7 @@
 - `GET /api/channels`：获取渠道定义（平台/自定义/不支持）
 - `PATCH /api/jobs/{id}`：修改文件夹名 / 原始文件名
  
-### 2.2 可选扩展接口（v0.1 推荐）
+### 2.2 可选扩展接口（v0.3 推荐）
 
 - `GET /api/jobs`：查询历史任务列表（用于“历史/文件夹”页面）
 - `GET /api/queue`：查询当前队列快照（运行中/排队中）
@@ -120,6 +125,7 @@
     {
       "job_id": "uuid",
       "folder_name": "paper",
+      "display_name": "paper",
       "created_at": "2026-01-24T12:00:00+08:00",
       "renamed_at": null,
       "status": "finished",
@@ -132,9 +138,9 @@
 ```
 
 说明：
-- `folder_name` 为后端生成的展示字符串，规则：`{原文件名stem}`  
+- `folder_name` 为后端生成的存储文件夹名  
+- `display_name` 为前端展示名，初始化为原文件名的 stem  
 - 若同名冲突，后端可追加短后缀，例如 `paper_a1b2`  
-- 前端只展示，不做解析与改写
 
 ### 2.3 队列快照（/api/queue）
 
@@ -191,8 +197,8 @@
     {
       "id": "deepseek",
       "label": "DeepSeek",
-      "enabled": false,
-      "disabled_reason": "暂未开放",
+      "enabled": true,
+      "disabled_reason": "",
       "visible": true
     }
   ],
@@ -377,6 +383,7 @@
 ```json
 {
   "folder_name": "paper",
+  "display_name": "Paper Title",
   "original_filename": "paper.pdf",
   "confirm": false
 }
@@ -384,8 +391,10 @@
 
 规则：
 - 仅允许 `finished/failed/canceled` 状态
-- `folder_name` 与 `original_filename` 可单独或同时修改
+- `folder_name` / `display_name` / `original_filename` 可单独或同时修改
 - 命名限制：禁止包含 `/ \\ : * ? \" < > |` 与控制字符
+- `original_filename` 不能为 `mono.pdf` 或 `dual.pdf`（保留名）
+- `display_name` 仅用于展示，不影响文件或文件夹
 - 冲突时返回 409，并提供 `suggested_*` 名称
 
 冲突响应示例：

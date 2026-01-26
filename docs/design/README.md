@@ -7,9 +7,5 @@
 
 ## 目录
 
-- `frontend-backend-contract-v0.3.md`：前后端契约（当前）
-- `frontend-requirements-v0.3.md`：前端功能需求（当前）
-- `frontend-backend-contract-v0.2.md`：前后端契约（历史）
-- `frontend-requirements-v0.2.md`：前端功能需求（历史）
-- `frontend-backend-contract-v0.1.md`：前后端契约（历史）
-- `frontend-requirements-v0.1.md`：前端功能需求（历史）
+- `frontend-backend-contract-v0.1.md`：前后端契约（单文件维护，版本在文件内）
+- `frontend-requirements-v0.1.md`：前端功能需求（单文件维护，版本在文件内）
