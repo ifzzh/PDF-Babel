@@ -212,6 +212,7 @@ curl -sSf -H "Range: bytes=0-99" -D - http://127.0.0.1:8000/api/files/5b483390-6
 - 创建任务时需提供真实可用的 `source.credentials`（API Key / Model / Base URL）。
 - `/api/jobs/{id}/run` 为**异步执行**，会立即返回 `status=running`，真正完成需要等待 SSE 或轮询状态。
 - 仅允许 `status=queued` 的任务执行，若已完成需重新创建任务。
+- 可通过环境变量 `BABELDOC_MAX_RUNNING` 控制并发上限（默认 1），超限会返回 429。
 
 示例（DeepSeek 自定义渠道）：
 
@@ -290,6 +291,38 @@ curl -sSf -X POST http://127.0.0.1:8000/api/jobs/{job_id}/cancel | jq .
 - 返回 `status: canceling` 或 `status: canceled`
 - `/api/jobs/{id}` 最终状态为 `canceled`
 - SSE 最终收到 `error`（内容包含 canceled）
+
+## 16. 验证并发上限（BABELDOC_MAX_RUNNING）
+
+重启服务前设置并发上限（示例：1）：
+
+```bash
+export BABELDOC_MAX_RUNNING=1
+uvicorn backend.main:app --host 127.0.0.1 --port 8000
+```
+
+创建两个任务并尝试同时执行：
+
+```bash
+JOB_ID_1=$(curl -sSf -X POST http://127.0.0.1:8000/api/jobs \
+  -F "file=@/home/ifzzh/Project/PDF-Babel/test-pdf/Kua.pdf" \
+  -F 'options={"lang_in":"en","lang_out":"zh"}' \
+  -F 'source={"mode":"custom","channel_id":"deepseek","credentials":{"base_url":"https://api.deepseek.com/v1","api_key":"YOUR_KEY","model":"deepseek-chat"}}' \
+  | jq -r '.job_id')
+
+JOB_ID_2=$(curl -sSf -X POST http://127.0.0.1:8000/api/jobs \
+  -F "file=@/home/ifzzh/Project/PDF-Babel/test-pdf/Kua.pdf" \
+  -F 'options={"lang_in":"en","lang_out":"zh"}' \
+  -F 'source={"mode":"custom","channel_id":"deepseek","credentials":{"base_url":"https://api.deepseek.com/v1","api_key":"YOUR_KEY","model":"deepseek-chat"}}' \
+  | jq -r '.job_id')
+
+curl -sSf -X POST http://127.0.0.1:8000/api/jobs/$JOB_ID_1/run | jq .
+curl -sSf -X POST http://127.0.0.1:8000/api/jobs/$JOB_ID_2/run | jq .
+```
+
+期望：
+- 第一个返回 `status: running`
+- 第二个返回 429（`too many running jobs`）
 
 ## 13. 常见问题
 
