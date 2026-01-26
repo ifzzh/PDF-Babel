@@ -10,8 +10,28 @@
     </div>
 
     <div v-else class="space-y-3">
+       <!-- Search Bar -->
+       <div class="relative">
+         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+           <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+           </svg>
+         </div>
+         <input 
+           :value="searchQuery"
+           @input="handleSearchInput"
+           type="text" 
+           class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+           placeholder="Search tasks..."
+         >
+       </div>
+
+       <div v-if="filteredJobs.length === 0" class="text-center py-8 text-gray-500">
+         No tasks match your search.
+       </div>
+
        <div 
-         v-for="job in jobs" 
+         v-for="job in filteredJobs" 
          :key="job.job_id"
          class="bg-white border rounded-lg p-4 hover:shadow-sm transition-shadow"
        >
@@ -126,6 +146,80 @@ import { format } from 'date-fns';
 const jobs = ref<Job[]>([]);
 const loading = ref(false);
 const emit = defineEmits(['select']);
+
+// Search State
+const searchQuery = ref('');
+const debouncedQuery = ref('');
+let searchTimeout: any = null;
+
+const handleSearchInput = (e: Event) => {
+  const val = (e.target as HTMLInputElement).value;
+  searchQuery.value = val;
+  
+  if (searchTimeout) clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    debouncedQuery.value = val;
+  }, 300);
+};
+
+// Search Logic
+import { computed } from 'vue';
+
+const filteredJobs = computed(() => {
+  const rawQuery = debouncedQuery.value.trim();
+  if (!rawQuery) {
+    return jobs.value;
+  }
+
+  // 1. Parse Input
+  // "kua  a   ndn" -> ["kua", "a", "ndn"]
+  const keywords = rawQuery.toLowerCase().split(/\s+/).filter(k => k.length > 0);
+  if (keywords.length === 0) return jobs.value;
+
+  // 2. Score and Filter
+  const scored = jobs.value.map(job => {
+    let score = 0;
+    
+    // Fields to check
+    const display = (job.display_name || '').toLowerCase();
+    const filename = (job.original_filename || '').toLowerCase();
+    const folder = (job.folder_name || '').toLowerCase();
+
+    // Check strict AND condition for all keywords
+    const allMatch = keywords.every(k => {
+      // Check if keyword exists in ANY field
+      const inDisplay = display.includes(k);
+      const inFilename = filename.includes(k);
+      const inFolder = folder.includes(k);
+      
+      if (!inDisplay && !inFilename && !inFolder) return false;
+
+      // Accumulate score (logic: add score for EACH keyword hit)
+      if (inDisplay) score += 3;
+      if (inFilename) score += 2;
+      if (inFolder) score += 1;
+      
+      return true;
+    });
+
+    return { job, score, match: allMatch };
+  });
+
+  // 3. Filter matched
+  const matches = scored.filter(item => item.match);
+
+  // 4. Sort
+  // Score desc, then created_at desc
+  matches.sort((a, b) => {
+    if (b.score !== a.score) {
+      return b.score - a.score;
+    }
+    // secondary sort by created_at desc
+    return new Date(b.job.created_at).getTime() - new Date(a.job.created_at).getTime();
+  });
+
+  return matches.map(item => item.job);
+});
 
 const renameModal = reactive({
   isOpen: false,
