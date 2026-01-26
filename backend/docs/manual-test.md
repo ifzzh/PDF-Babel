@@ -258,6 +258,25 @@ curl -sSf -X POST http://127.0.0.1:8000/api/jobs/{job_id}/run | jq .
 期望：
 - SSE 输出包含 `stage_summary` / `progress_update` / `finish`（或 `error`）
 
+## 15. 验证取消任务（/api/jobs/{id}/cancel）
+
+在一个终端执行翻译（会阻塞）：
+
+```bash
+curl -sSf -X POST http://127.0.0.1:8000/api/jobs/{job_id}/run | jq .
+```
+
+翻译过程中在另一个终端发送取消请求：
+
+```bash
+curl -sSf -X POST http://127.0.0.1:8000/api/jobs/{job_id}/cancel | jq .
+```
+
+期望：
+- 返回 `status: canceling` 或 `status: canceled`
+- `/api/jobs/{id}` 最终状态为 `canceled`
+- SSE 最终收到 `error`（内容包含 canceled）
+
 ## 13. 常见问题
 
 - **端口无法绑定**：

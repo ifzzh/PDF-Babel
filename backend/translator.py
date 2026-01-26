@@ -1,4 +1,5 @@
 import json
+from asyncio import CancelledError
 import threading
 from pathlib import Path
 from typing import Any
@@ -340,6 +341,16 @@ def run_translation_job(
             report_interval=config.report_interval,
         ) as pm:
             result = do_translate(pm, config)
+        if cancel_event.is_set():
+            update_job_status(settings, record.id, "canceled", error="canceled")
+            EVENT_STORE.append_event(
+                record.id, "error", {"error": "canceled"}
+            )
+            return {"job_id": record.id, "status": "canceled", "files": []}
+    except CancelledError:
+        update_job_status(settings, record.id, "canceled", error="canceled")
+        EVENT_STORE.append_event(record.id, "error", {"error": "canceled"})
+        return {"job_id": record.id, "status": "canceled", "files": []}
     except Exception as exc:
         update_job_status(settings, record.id, "failed", error=str(exc))
         if isinstance(exc, (ValueError, FileNotFoundError)):

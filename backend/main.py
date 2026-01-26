@@ -19,6 +19,7 @@ from backend.jobs import create_job
 from backend.jobs import get_job_by_id
 from backend.jobs import list_jobs
 from backend.jobs import rename_job
+from backend.jobs import update_job_status
 from backend.files import create_file_record
 from backend.files import get_file_by_id
 from backend.files import get_file_flags
@@ -185,6 +186,29 @@ def run_job(job_id: str):
     except TranslationError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     return result
+
+
+@app.post("/api/jobs/{job_id}/cancel")
+def cancel_job(job_id: str):
+    record = get_job_by_id(app.state.settings, job_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="job not found")
+    if record.status in ("finished", "failed", "canceled"):
+        raise HTTPException(status_code=409, detail="job already finalized")
+    if record.status == "queued":
+        update_job_status(
+            app.state.settings, record.id, "canceled", error="canceled"
+        )
+        EVENT_STORE.append_event(
+            record.id, "error", {"error": "canceled"}
+        )
+        return {"job_id": record.id, "status": "canceled"}
+
+    cancel_event = EVENT_STORE.get_cancel_event(record.id)
+    if cancel_event is None:
+        raise HTTPException(status_code=409, detail="cancel_not_supported")
+    cancel_event.set()
+    return {"job_id": record.id, "status": "canceling"}
 
 
 @app.get("/api/jobs")
