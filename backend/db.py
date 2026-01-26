@@ -42,6 +42,17 @@ def init_db(db_path: Path) -> None:
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_files_job_id ON files(job_id)"
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS job_queue (
+                enqueue_seq INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_id TEXT NOT NULL UNIQUE,
+                status TEXT NOT NULL,
+                enqueued_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
         columns = [row[1] for row in conn.execute("PRAGMA table_info(jobs)")]
         if "renamed_at" not in columns:
             conn.execute("ALTER TABLE jobs ADD COLUMN renamed_at TEXT")

@@ -28,6 +28,7 @@ from backend.files import list_files_by_job
 from backend.storage import ensure_storage
 from backend.events import EVENT_STORE
 from backend.scheduler import SCHEDULER
+from backend import queue_store
 
 app = FastAPI()
 app.state.settings = settings
@@ -193,7 +194,7 @@ def cancel_job(job_id: str):
     if record.status in ("finished", "failed", "canceled"):
         raise HTTPException(status_code=409, detail="job already finalized")
     if record.status == "queued":
-        SCHEDULER.cancel(record.id)
+        SCHEDULER.cancel(app.state.settings, record.id)
         update_job_status(
             app.state.settings, record.id, "canceled", error="canceled"
         )
@@ -212,7 +213,12 @@ def cancel_job(job_id: str):
 @app.get("/api/queue")
 def get_queue():
     SCHEDULER.configure(app.state.settings.max_running)
-    return SCHEDULER.snapshot()
+    snapshot = queue_store.snapshot(app.state.settings)
+    return {
+        "max_running": app.state.settings.max_running,
+        "running": snapshot["running"],
+        "queued": snapshot["queued"],
+    }
 
 
 @app.get("/api/jobs")
@@ -434,3 +440,7 @@ def download_file(file_id: str, request: Request):
 def _startup():
     app.state.storage = ensure_storage(app.state.settings)
     init_db(app.state.settings.db_path)
+    queue_store.reset_running_to_queued(app.state.settings)
+    snapshot = queue_store.snapshot(app.state.settings)
+    SCHEDULER.configure(app.state.settings.max_running)
+    SCHEDULER.load_queued(snapshot["queued"])

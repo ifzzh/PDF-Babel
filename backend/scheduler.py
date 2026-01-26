@@ -2,6 +2,8 @@ from collections import deque
 import threading
 from typing import Deque
 
+from backend import queue_store
+
 
 class JobScheduler:
     def __init__(self) -> None:
@@ -21,14 +23,16 @@ class JobScheduler:
             if job_id in self._queue:
                 return "queued"
             self._queue.append(job_id)
+        queue_store.enqueue_job(settings, job_id)
         self._try_dispatch(settings, storage)
         with self._lock:
             return "running" if job_id in self._running else "queued"
 
-    def cancel(self, job_id: str) -> bool:
+    def cancel(self, settings, job_id: str) -> bool:
         with self._lock:
             if job_id in self._queue:
                 self._queue.remove(job_id)
+                queue_store.remove_job(settings, job_id)
                 return True
         return False
 
@@ -48,6 +52,7 @@ class JobScheduler:
                 if job_id in self._running:
                     continue
                 self._running.add(job_id)
+                queue_store.mark_running(settings, job_id)
                 start_jobs.append(job_id)
 
         for job_id in start_jobs:
@@ -70,7 +75,14 @@ class JobScheduler:
     def _mark_done(self, job_id: str, settings, storage) -> None:
         with self._lock:
             self._running.discard(job_id)
+            queue_store.remove_job(settings, job_id)
         self._try_dispatch(settings, storage)
+
+    def load_queued(self, job_ids: list[str]) -> None:
+        with self._lock:
+            for job_id in job_ids:
+                if job_id not in self._queue and job_id not in self._running:
+                    self._queue.append(job_id)
 
 
 SCHEDULER = JobScheduler()
