@@ -29,3 +29,5 @@ export const renameJob = (id: string, data: {
 }) => api.patch(`/jobs/${id}`, data);
 
 export const runJob = (id: string) => api.post(`/jobs/${id}/run`);
+export const deleteJob = (id: string, confirm: boolean = false) => api.delete(`/jobs/${id}`, { params: { confirm } });
+export const deleteJobs = (data: { job_ids: string[], confirm: boolean }) => api.post('/jobs/delete', data);

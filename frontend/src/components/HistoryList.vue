@@ -10,35 +10,70 @@
     </div>
 
     <div v-else class="space-y-3">
-       <!-- Search Bar -->
-       <div class="relative">
-         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-           <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-           </svg>
+       <div class="flex items-center space-x-4">
+         <!-- Search Bar -->
+         <div class="relative flex-1">
+           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+             <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+             </svg>
+           </div>
+           <input 
+             :value="searchQuery"
+             @input="handleSearchInput"
+             type="text" 
+             class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+             placeholder="Search tasks..."
+           >
          </div>
-         <input 
-           :value="searchQuery"
-           @input="handleSearchInput"
-           type="text" 
-           class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-           placeholder="Search tasks..."
-         >
+         
+         <!-- Batch Actions -->
+         <div v-if="selectedJobs.size > 0" class="flex items-center space-x-2">
+            <span class="text-sm text-gray-500">{{ selectedJobs.size }} selected</span>
+            <button 
+              @click="confirmDelete()"
+              class="px-3 py-2 bg-red-50 text-red-600 rounded hover:bg-red-100 text-sm font-medium transition-colors"
+            >
+              Delete Selected
+            </button>
+         </div>
        </div>
 
        <div v-if="filteredJobs.length === 0" class="text-center py-8 text-gray-500">
          No tasks match your search.
+       </div>
+       
+       <!-- Select All Header (Optional but good for UX) -->
+       <div v-if="filteredJobs.length > 0" class="flex items-center px-4 py-2 bg-gray-50 rounded border text-sm text-gray-600">
+          <input 
+            type="checkbox" 
+            :checked="allSelected"
+            @change="toggleAll"
+            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-3 h-4 w-4"
+          >
+          <span>Select All</span>
        </div>
 
        <div 
          v-for="job in filteredJobs" 
          :key="job.job_id"
          class="bg-white border rounded-lg p-4 hover:shadow-sm transition-shadow"
+         :class="{'ring-2 ring-blue-500 border-transparent': selectedJobs.has(job.job_id)}"
        >
          <div class="flex items-start justify-between">
-             <div class="flex-1">
+           <div class="flex items-center mr-4 pt-1">
+             <input 
+               type="checkbox" 
+               :checked="selectedJobs.has(job.job_id)"
+               @change="toggleSelection(job.job_id)"
+               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
+             >
+           </div>
+           
+           <div class="flex-1">
               <div class="flex items-center space-x-2">
-                <span class="font-medium text-lg text-gray-800">{{ job.display_name || job.original_filename || job.folder_name || 'Untitled' }}</span>
+                <span class="font-medium text-lg text-gray-800">{{ stripExtension(job.display_name || job.original_filename || job.folder_name || 'Untitled') }}</span>
+                <span v-if="job.original_filename && job.folder_name !== job.original_filename" class="text-xs text-gray-400">({{ job.folder_name }})</span>
                 <span 
                   class="px-2 py-0.5 rounded text-xs font-medium capitalize"
                   :class="{
@@ -69,8 +104,9 @@
               <button 
                 @click="$emit('select', job.job_id)"
                 class="px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded border border-transparent hover:border-blue-100 transition-colors"
+                style="min-width: 80px"
               >
-                View Details
+                Details
               </button>
               
               <button 
@@ -80,9 +116,34 @@
               >
                 Rename
               </button>
+
+              <button 
+                @click="confirmDelete(job.job_id)"
+                class="px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded border border-transparent hover:border-red-100 transition-colors"
+              >
+                Delete
+              </button>
            </div>
          </div>
        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="isDeleteModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-sm shadow-lg">
+            <h3 class="text-lg font-medium text-red-600 mb-2">Confirm Delete</h3>
+            <p class="text-gray-600 mb-4">
+                {{ deleteTarget ? 'Are you sure you want to delete this task?' : `Are you sure you want to delete ${selectedJobs.size} selected tasks?` }}
+                This action cannot be undone.
+            </p>
+            
+            <p v-if="deleteError" class="text-sm text-red-500 mb-4 bg-red-50 p-2 rounded">{{ deleteError }}</p>
+
+            <div class="flex justify-end space-x-3">
+                <button @click="isDeleteModalOpen = false" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Cancel</button>
+                <button @click="processedDelete" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Delete</button>
+            </div>
+        </div>
     </div>
 
     <!-- Rename Modal -->
@@ -138,8 +199,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue';
-import { fetchJobs, renameJob, fetchJob } from '../api';
+import { ref, onMounted, reactive, computed } from 'vue';
+import { fetchJobs, renameJob, fetchJob, deleteJob, deleteJobs } from '../api';
 import type { Job } from '../types';
 import { format } from 'date-fns';
 
@@ -162,67 +223,105 @@ const handleSearchInput = (e: Event) => {
   }, 300);
 };
 
-// Search Logic
-import { computed } from 'vue';
-
 const filteredJobs = computed(() => {
+  // ... (previous filter logic remains same, just ensuring context)
   const rawQuery = debouncedQuery.value.trim();
-  if (!rawQuery) {
-    return jobs.value;
-  }
+  // ... (omitted filter logic implementation details to keep diff small, assuming context match)
+  // Re-implementing filter logic briefly to ensure context is correct or just assume wrap?
+  // Actually, I should just supply the new logic additions and let replace match the surrounding.
+  // Wait, replace_file_content needs exact match. I'll read file first to be safe or use what I have.
+  // I have the content from previous turn.
 
-  // 1. Parse Input
-  // "kua  a   ndn" -> ["kua", "a", "ndn"]
+  if (!rawQuery) return jobs.value;
+  
   const keywords = rawQuery.toLowerCase().split(/\s+/).filter(k => k.length > 0);
   if (keywords.length === 0) return jobs.value;
 
-  // 2. Score and Filter
   const scored = jobs.value.map(job => {
     let score = 0;
-    
-    // Fields to check
     const display = (job.display_name || '').toLowerCase();
     const filename = (job.original_filename || '').toLowerCase();
     const folder = (job.folder_name || '').toLowerCase();
 
-    // Check strict AND condition for all keywords
     const allMatch = keywords.every(k => {
-      // Check if keyword exists in ANY field
       const inDisplay = display.includes(k);
       const inFilename = filename.includes(k);
       const inFolder = folder.includes(k);
-      
       if (!inDisplay && !inFilename && !inFolder) return false;
-
-      // Accumulate score (logic: add score for EACH keyword hit)
       if (inDisplay) score += 3;
       if (inFilename) score += 2;
       if (inFolder) score += 1;
-      
       return true;
     });
-
     return { job, score, match: allMatch };
   });
 
-  // 3. Filter matched
   const matches = scored.filter(item => item.match);
-
-  // 4. Sort
-  // Score desc, then created_at desc
   matches.sort((a, b) => {
-    if (b.score !== a.score) {
-      return b.score - a.score;
-    }
-    // secondary sort by created_at desc
+    if (b.score !== a.score) return b.score - a.score;
     return new Date(b.job.created_at).getTime() - new Date(a.job.created_at).getTime();
   });
-
   return matches.map(item => item.job);
 });
 
+// Selection Logic
+const selectedJobs = ref<Set<string>>(new Set());
+const allSelected = computed(() => {
+    return filteredJobs.value.length > 0 && selectedJobs.value.size === filteredJobs.value.length;
+});
+const toggleSelection = (id: string) => {
+    if (selectedJobs.value.has(id)) selectedJobs.value.delete(id);
+    else selectedJobs.value.add(id);
+};
+const toggleAll = () => {
+    if (allSelected.value) {
+        selectedJobs.value.clear();
+    } else {
+        filteredJobs.value.forEach(job => selectedJobs.value.add(job.job_id));
+    }
+};
+
+// Delete Logic
+const isDeleteModalOpen = ref(false);
+const deleteTarget = ref<string | null>(null); // null means batch delete
+const deleteError = ref('');
+
+const confirmDelete = (id?: string) => {
+    deleteTarget.value = id || null;
+    deleteError.value = '';
+    isDeleteModalOpen.value = true;
+};
+
+const processedDelete = async () => {
+    try {
+        if (deleteTarget.value) {
+            // Single
+            const res = await deleteJob(deleteTarget.value, true);
+            if (res.data.status === 'canceling') {
+               alert('Job is currently canceling. Please try deleting again later.');
+            }
+        } else {
+            // Batch
+            const ids = Array.from(selectedJobs.value);
+            const res = await deleteJobs({ job_ids: ids, confirm: true });
+            
+            const skipped = res.data.skipped || [];
+            if (skipped.length > 0) {
+                const reasons = skipped.map((s: any) => `${s.job_id}: ${s.reason}`).join('\n');
+                alert(`Some jobs could not be deleted:\n${reasons}`);
+            }
+            selectedJobs.value.clear();
+        }
+        isDeleteModalOpen.value = false;
+        loadHistory();
+    } catch (e: any) {
+        deleteError.value = e.response?.data?.detail || 'Delete failed';
+    }
+};
+
 const renameModal = reactive({
   isOpen: false,
+// ... (rest of rename modal logic)
   jobId: '',
   folderName: '',
   fileName: '',
@@ -232,8 +331,7 @@ const renameModal = reactive({
   confirming: false,
   confirmMessage: ''
 });
-
-// ... formatTime ... (omitted, assuming it's usually just date-fns wrapper)
+// ...
 const formatTime = (ts: string) => {
   try {
     return format(new Date(ts), 'yyyy-MM-dd HH:mm:ss');
@@ -241,17 +339,22 @@ const formatTime = (ts: string) => {
     return ts;
   }
 };
-
+// ... (stripExtension logic)
+const stripExtension = (name: string) => {
+  if (!name) return '';
+  const lastDot = name.lastIndexOf('.');
+  if (lastDot > 0) return name.substring(0, lastDot);
+  return name;
+};
+// ... (loadHistory logic)
 const loadHistory = async () => {
   loading.value = true;
   try {
     const res = await fetchJobs({ limit: 50 });
     jobs.value = res.data.items;
+    selectedJobs.value.clear(); // clear selection on reload
     
-    // Fetch missing details for each job if critical fields missing
     jobs.value.forEach(async (job) => {
-        // If display_name or filename missing, fetch full details to be safe
-        // (Though backend list should now return them, old jobs might have nulls?)
         if (!job.original_filename || job.display_name === undefined) {
             try {
                 const detail = await fetchJob(job.job_id);
@@ -271,6 +374,8 @@ const loadHistory = async () => {
     loading.value = false;
   }
 };
+// ... (rest of rename functions)
+
 
 const openRename = async (job: Job) => {
   // Use local copy first
