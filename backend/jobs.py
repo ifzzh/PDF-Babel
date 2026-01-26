@@ -60,6 +60,9 @@ def _normalize_original_filename(value: str) -> str:
         name = f"{name}.pdf"
     if Path(name).suffix.lower() != ".pdf":
         raise ValueError("original_filename must end with .pdf")
+    lower_name = Path(name).name.lower()
+    if lower_name in ("mono.pdf", "dual.pdf"):
+        raise ValueError("original_filename is reserved")
     return name
 
 
@@ -289,14 +292,18 @@ def rename_job(
 
     suggestions: dict[str, str] = {}
     conflict = False
-    if new_folder_name != record.folder_name and target_dir.exists():
+    folder_conflict = (
+        new_folder_name != record.folder_name and target_dir.exists()
+    )
+    if folder_conflict:
         conflict = True
         suggestions["folder_name"] = _suggest_folder_name(new_folder_name)
-    if target_file.exists() and target_file != current_file:
-        conflict = True
-        suggestions["original_filename"] = _suggest_filename(
-            new_original_filename
-        )
+    else:
+        if target_file.exists() and target_file != current_file:
+            conflict = True
+            suggestions["original_filename"] = _suggest_filename(
+                new_original_filename
+            )
 
     if conflict and not confirm:
         return record, suggestions

@@ -57,6 +57,7 @@
    - 重命名冲突时：后端生成带时间后缀的建议名并返回  
    - 前端需让用户确认后再提交  
    - 后端记录 `renamed_at`（北京时间）
+   - `original_filename` 不允许为 `mono.pdf` 或 `dual.pdf`（保留名）
 
 如需调整上述任一条，必须升级版本号（例如 v0.2）并同步前后端变更。
 
@@ -387,6 +388,7 @@
 - 仅允许 `finished/failed/canceled` 状态
 - `folder_name` 与 `original_filename` 可单独或同时修改
 - 命名限制：禁止包含 `/ \\ : * ? \" < > |` 与控制字符
+- `original_filename` 不能为 `mono.pdf` 或 `dual.pdf`（保留名）
 - 冲突时返回 409，并提供 `suggested_*` 名称
 
 冲突响应示例：

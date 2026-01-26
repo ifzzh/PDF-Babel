@@ -199,6 +199,8 @@ sqlite3 /mnt/raid1/babeldoc-data/db/db.sqlite3 \\
 
 重命名测试（folder + original 文件名）：
 
+注意：`original_filename` 不允许为 `mono.pdf` 或 `dual.pdf`。
+
 ```bash
 curl -sSf -X PATCH http://127.0.0.1:8000/api/jobs/$JOB_ID \
   -H 'Content-Type: application/json' \
