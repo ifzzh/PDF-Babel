@@ -1,5 +1,8 @@
 from typing import Any
 
+from backend.config import Settings
+from backend.config import settings as _default_settings
+
 
 def _field(key: str, label: str, required: bool, secret: bool) -> dict[str, Any]:
     return {
@@ -10,14 +13,17 @@ def _field(key: str, label: str, required: bool, secret: bool) -> dict[str, Any]
     }
 
 
-def get_channels() -> dict[str, list[dict[str, Any]]]:
+def get_channels(settings: Settings | None = None) -> dict[str, list[dict[str, Any]]]:
+    settings = settings or _default_settings
+    platform_enabled = bool(settings.platform_deepseek_api_key)
     platform = [
         {
             "id": "deepseek",
             "label": "DeepSeek",
-            "enabled": False,
-            "disabled_reason": "暂未开放",
+            "enabled": platform_enabled,
+            "disabled_reason": "" if platform_enabled else "缺少平台配置",
             "visible": True,
+            "default": True,
         }
     ]
 

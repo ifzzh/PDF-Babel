@@ -80,13 +80,53 @@ sqlite3 /mnt/raid1/babeldoc-data/db/db.sqlite3 \".tables\"\n
 
 期望输出包含：`jobs` 与 `files`。
 
+## 6.1 平台渠道配置（可选）
+
+平台 DeepSeek 的配置通过 JSON 文件读取，默认路径：
+
+```
+/mnt/raid1/babeldoc-data/config/platform.json
+```
+
+可通过环境变量覆盖配置文件路径：
+
+```bash
+export BABELDOC_PLATFORM_CONFIG="/mnt/raid1/babeldoc-data/config/platform.json"
+```
+
+示例内容（请替换为你自己的 key）：
+
+```json
+{
+  "platform": {
+    "deepseek": {
+      "base_url": "https://api.deepseek.com/v1",
+      "api_key": "YOUR_KEY",
+      "model": "deepseek-chat"
+    }
+  }
+}
+```
+
+如需覆盖配置文件，可用环境变量：
+
+```bash
+export BABELDOC_PLATFORM_DEEPSEEK_BASE_URL="https://api.deepseek.com/v1"
+export BABELDOC_PLATFORM_DEEPSEEK_API_KEY="YOUR_KEY"
+export BABELDOC_PLATFORM_DEEPSEEK_MODEL="deepseek-chat"
+```
+
 ## 7. 验证渠道定义接口
 
 ```bash
 curl -sSf http://127.0.0.1:8000/api/channels | jq .
 ```
 
-期望：返回 `platform/custom/unsupported` 三个字段；`platform` 中只有 DeepSeek 且 `enabled=false`；每个条目包含 `visible`。
+期望：返回 `platform/custom/unsupported` 三个字段；`platform` 中只有 DeepSeek；每个条目包含 `visible`。
+
+说明：
+- 平台 DeepSeek 是否可用取决于平台配置文件
+- 未配置时 `enabled=false` 且 `disabled_reason` 提示“缺少平台配置”
 
 ## 8. 验证 /api/jobs 创建与查询
 

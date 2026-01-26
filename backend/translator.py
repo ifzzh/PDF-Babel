@@ -124,6 +124,18 @@ def _resolve_base_url(channel_id: str, credentials: dict[str, Any]) -> str | Non
     return _DEFAULT_BASE_URLS.get(channel_id)
 
 
+def _platform_credentials(settings: Settings, channel_id: str) -> dict[str, Any]:
+    if channel_id == "deepseek":
+        if not settings.platform_deepseek_api_key:
+            raise ValueError("missing platform api_key")
+        return {
+            "base_url": settings.platform_deepseek_base_url,
+            "api_key": settings.platform_deepseek_api_key,
+            "model": settings.platform_deepseek_model,
+        }
+    raise ValueError("platform channel not supported")
+
+
 def _map_qwen_lang(lang: str) -> str:
     if not lang:
         return ""
@@ -302,11 +314,14 @@ def run_translation_job(
         try:
             options = _parse_json(record.options_json)
             source = _parse_json(record.source_json)
-            if source.get("mode") != "custom":
-                raise ValueError("platform source not supported")
-
+            mode = source.get("mode")
             channel_id = _require_value(source, "channel_id")
-            credentials = source.get("credentials") or {}
+            if mode == "platform":
+                credentials = _platform_credentials(settings, channel_id)
+            elif mode == "custom":
+                credentials = source.get("credentials") or {}
+            else:
+                raise ValueError("invalid source mode")
 
             lang_in = _require_value(options, "lang_in")
             lang_out = _require_value(options, "lang_out")

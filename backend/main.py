@@ -41,7 +41,7 @@ def healthz():
 
 @app.get("/api/channels")
 def channels():
-    return get_channels()
+    return get_channels(app.state.settings)
 
 
 def _parse_json(value: str, field_name: str):
@@ -60,7 +60,7 @@ def _validate_source(source: dict):
     channel_id = source.get("channel_id")
     if not channel_id:
         raise HTTPException(status_code=400, detail="missing source.channel_id")
-    channels = get_channels()
+    channels = get_channels(app.state.settings)
     pool = channels.get(mode, [])
     channel = next((c for c in pool if c.get("id") == channel_id), None)
     if channel is None:
@@ -95,6 +95,8 @@ async def create_job_endpoint(
     options_obj = _parse_json(options, "options") if options else {}
     source_obj = _parse_json(source, "source") if source else {}
     _validate_source(source_obj)
+    if source_obj.get("mode") == "platform":
+        source_obj.pop("credentials", None)
     content = await file.read()
     if not content:
         raise HTTPException(status_code=400, detail="empty file")
@@ -106,6 +108,8 @@ async def create_job_endpoint(
         options_obj,
         source_obj,
     )
+    SCHEDULER.configure(app.state.settings.max_running)
+    SCHEDULER.submit(record.id, app.state.settings, app.state.storage)
     return {
         "job_id": record.id,
         "status": record.status,
