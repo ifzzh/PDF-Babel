@@ -75,6 +75,17 @@
 - 队列快照只返回 job_id，若需显示名称/时间，请用 `GET /api/jobs` 或 `GET /api/jobs/{id}` 补全
 - 未实现 `glossary_files` 时可暂不上传（后端允许缺省）
 
+12) **历史搜索（任务列表过滤）**
+- 搜索框输入后本地过滤（不请求新接口），建议 150-300ms debounce
+- 输入处理：`trim` 后合并多空格，再按空格拆成关键词，全部转小写
+- 匹配优先级：`display_name`（最高） > `original_filename` > `folder_name`
+- 匹配逻辑（AND）：所有关键词必须命中（可命中不同字段）
+- 排序：按匹配分数降序，再按 `created_at` 降序
+  - 命中 `display_name` +3
+  - 命中 `original_filename` +2
+  - 命中 `folder_name` +1
+- **可选模糊匹配**：若 `includes` 失败，可再用“子序列匹配”（如 `kua` 匹配 `k..u..a`）
+
 ---
 
 ## 2. 前端状态模型（建议）
