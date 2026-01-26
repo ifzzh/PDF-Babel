@@ -354,14 +354,12 @@ def run_translation_job(
                 record.id, "error", {"error": "canceled"}
             )
             return {"job_id": record.id, "status": "canceled", "files": []}
-        except Exception as exc:
-            update_job_status(settings, record.id, "failed", error=str(exc))
-            if isinstance(exc, (ValueError, FileNotFoundError)):
-                raise
-            EVENT_STORE.append_event(record.id, "error", {"error": str(exc)})
-            raise TranslationError(str(exc)) from exc
-    finally:
-        EVENT_STORE.clear_running(record.id)
+    except Exception as exc:
+        update_job_status(settings, record.id, "failed", error=str(exc))
+        if isinstance(exc, (ValueError, FileNotFoundError)):
+            raise
+        EVENT_STORE.append_event(record.id, "error", {"error": str(exc)})
+        raise TranslationError(str(exc)) from exc
 
     watermark_mode = _parse_watermark_mode(options.get("watermark_output_mode"))
     watermark_label = (

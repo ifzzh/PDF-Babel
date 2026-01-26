@@ -1,5 +1,4 @@
 import json
-import threading
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from pathlib import Path
@@ -28,6 +27,7 @@ from backend.files import get_file_flags
 from backend.files import list_files_by_job
 from backend.storage import ensure_storage
 from backend.events import EVENT_STORE
+from backend.scheduler import SCHEDULER
 
 app = FastAPI()
 app.state.settings = settings
@@ -180,26 +180,9 @@ def run_job(job_id: str):
         raise HTTPException(status_code=404, detail="job not found")
     if record.status != "queued":
         raise HTTPException(status_code=409, detail="job not queued")
-    slot = EVENT_STORE.try_acquire_slot(
-        record.id, app.state.settings.max_running
-    )
-    if slot == "running":
-        raise HTTPException(status_code=409, detail="job already running")
-    if slot == "limit":
-        raise HTTPException(status_code=429, detail="too many running jobs")
-
-    def _worker():
-        from backend.translator import run_translation_job
-
-        try:
-            run_translation_job(
-                app.state.settings, app.state.storage, record.id
-            )
-        except Exception:
-            return
-
-    threading.Thread(target=_worker, daemon=True).start()
-    return {"job_id": record.id, "status": "running"}
+    SCHEDULER.configure(app.state.settings.max_running)
+    status = SCHEDULER.submit(record.id, app.state.settings, app.state.storage)
+    return {"job_id": record.id, "status": status}
 
 
 @app.post("/api/jobs/{job_id}/cancel")
@@ -210,13 +193,13 @@ def cancel_job(job_id: str):
     if record.status in ("finished", "failed", "canceled"):
         raise HTTPException(status_code=409, detail="job already finalized")
     if record.status == "queued":
+        SCHEDULER.cancel(record.id)
         update_job_status(
             app.state.settings, record.id, "canceled", error="canceled"
         )
         EVENT_STORE.append_event(
             record.id, "error", {"error": "canceled"}
         )
-        EVENT_STORE.clear_running(record.id)
         return {"job_id": record.id, "status": "canceled"}
 
     cancel_event = EVENT_STORE.get_cancel_event(record.id)
