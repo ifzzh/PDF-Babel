@@ -331,6 +331,15 @@ curl -sSf -X POST http://127.0.0.1:8000/api/jobs/$JOB_ID_2/run | jq .
 curl -sSf http://127.0.0.1:8000/api/jobs/$JOB_ID_2 | jq .
 ```
 
+## 17. 验证队列快照（/api/queue）
+
+```bash
+curl -sSf http://127.0.0.1:8000/api/queue | jq .
+```
+
+期望：
+- 返回 `max_running`、`running`、`queued`
+
 ## 13. 常见问题
 
 - **端口无法绑定**：
