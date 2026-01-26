@@ -3,6 +3,7 @@ export interface Job {
     status: 'queued' | 'running' | 'finished' | 'failed' | 'canceled';
     created_at: string;
     folder_name?: string;
+    display_name?: string;
     original_filename?: string;
     renamed_at?: string;
     has_mono?: boolean;

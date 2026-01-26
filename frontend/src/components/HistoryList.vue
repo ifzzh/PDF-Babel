@@ -16,9 +16,9 @@
          class="bg-white border rounded-lg p-4 hover:shadow-sm transition-shadow"
        >
          <div class="flex items-start justify-between">
-           <div class="flex-1">
+             <div class="flex-1">
               <div class="flex items-center space-x-2">
-                <span class="font-medium text-lg text-gray-800">{{ job.folder_name || 'Untitled' }}</span>
+                <span class="font-medium text-lg text-gray-800">{{ job.display_name || job.original_filename || job.folder_name || 'Untitled' }}</span>
                 <span 
                   class="px-2 py-0.5 rounded text-xs font-medium capitalize"
                   :class="{
@@ -72,13 +72,30 @@
         
         <div class="space-y-4">
            <div>
-             <label class="block text-sm font-medium text-gray-700 mb-1">Folder Name (Display Name)</label>
+             <label class="block text-sm font-medium text-gray-700 mb-1">Display Name (Title)</label>
+             <div class="flex space-x-2">
+                 <input v-model="renameModal.displayName" type="text" class="flex-1 border rounded px-3 py-2">
+                 <button @click="syncToFilename" class="px-2 py-1 bg-gray-100 text-xs border rounded hover:bg-gray-200" title="Sync to Filename">
+                    Current → Filename
+                 </button>
+             </div>
+           </div>
+
+           <div>
+             <label class="block text-sm font-medium text-gray-700 mb-1">Folder Name (Directory)</label>
              <input v-model="renameModal.folderName" type="text" class="w-full border rounded px-3 py-2">
            </div>
+           
            <div>
              <label class="block text-sm font-medium text-gray-700 mb-1">Original Filename (Internal)</label>
-             <input v-model="renameModal.fileName" type="text" class="w-full border rounded px-3 py-2">
+             <div class="flex space-x-2">
+                <input v-model="renameModal.fileName" type="text" class="flex-1 border rounded px-3 py-2">
+                <button @click="syncToDisplay" class="px-2 py-1 bg-gray-100 text-xs border rounded hover:bg-gray-200" title="Sync to Display Name">
+                    Current → Display
+                 </button>
+             </div>
            </div>
+
            <p v-if="renameModal.error" class="text-sm text-red-500">{{ renameModal.error }}</p>
            <p v-if="renameModal.confirmMessage" class="text-sm text-yellow-600 bg-yellow-50 p-2 rounded">
              {{ renameModal.confirmMessage }}
@@ -102,7 +119,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
-import { fetchJobs, renameJob } from '../api';
+import { fetchJobs, renameJob, fetchJob } from '../api';
 import type { Job } from '../types';
 import { format } from 'date-fns';
 
@@ -115,12 +132,14 @@ const renameModal = reactive({
   jobId: '',
   folderName: '',
   fileName: '',
+  displayName: '',
   error: '',
   submitting: false,
   confirming: false,
   confirmMessage: ''
 });
 
+// ... formatTime ... (omitted, assuming it's usually just date-fns wrapper)
 const formatTime = (ts: string) => {
   try {
     return format(new Date(ts), 'yyyy-MM-dd HH:mm:ss');
@@ -134,6 +153,24 @@ const loadHistory = async () => {
   try {
     const res = await fetchJobs({ limit: 50 });
     jobs.value = res.data.items;
+    
+    // Fetch missing details for each job if critical fields missing
+    jobs.value.forEach(async (job) => {
+        // If display_name or filename missing, fetch full details to be safe
+        // (Though backend list should now return them, old jobs might have nulls?)
+        if (!job.original_filename || job.display_name === undefined) {
+            try {
+                const detail = await fetchJob(job.job_id);
+                if (detail.data) {
+                    if (detail.data.original_filename) job.original_filename = detail.data.original_filename;
+                    if (detail.data.display_name !== undefined) job.display_name = detail.data.display_name;
+                }
+            } catch (e) {
+                console.warn(`Failed to fetch details for ${job.job_id}`);
+            }
+        }
+    });
+
   } catch (e) {
     console.error('Failed to load history', e);
   } finally {
@@ -141,18 +178,53 @@ const loadHistory = async () => {
   }
 };
 
-const openRename = (job: Job) => {
+const openRename = async (job: Job) => {
+  // Use local copy first
   renameModal.jobId = job.job_id;
   renameModal.folderName = job.folder_name || '';
   renameModal.fileName = job.original_filename || '';
+  renameModal.displayName = job.display_name || '';
+  
+  // Reset state
   renameModal.error = '';
   renameModal.confirming = false;
   renameModal.confirmMessage = '';
   renameModal.isOpen = true;
+
+  // Fetch full details to ensure we have latest display_name/filename
+  try {
+      const res = await fetchJob(job.job_id);
+      if (res.data) {
+          renameModal.fileName = res.data.original_filename || renameModal.fileName;
+          renameModal.folderName = res.data.folder_name || renameModal.folderName;
+          renameModal.displayName = res.data.display_name || renameModal.displayName;
+      }
+  } catch (e) {
+      renameModal.error = 'Failed to fetch latest job details';
+  }
 };
 
 const closeRename = () => {
   renameModal.isOpen = false;
+};
+
+// Sync Logic
+const syncToFilename = () => {
+    if (!renameModal.displayName) return;
+    let name = renameModal.displayName.trim();
+    if (!name.toLowerCase().endsWith('.pdf')) {
+        name += '.pdf';
+    }
+    renameModal.fileName = name;
+};
+
+const syncToDisplay = () => {
+    if (!renameModal.fileName) return;
+    let name = renameModal.fileName.trim();
+    if (name.toLowerCase().endsWith('.pdf')) {
+        name = name.slice(0, -4);
+    }
+    renameModal.displayName = name;
 };
 
 const submitRename = async () => {
@@ -163,6 +235,7 @@ const submitRename = async () => {
     const payload = {
       folder_name: renameModal.folderName,
       original_filename: renameModal.fileName,
+      display_name: renameModal.displayName,
       confirm: renameModal.confirming
     };
 
@@ -175,13 +248,22 @@ const submitRename = async () => {
   } catch (e: any) {
     if (e.response && e.response.status === 409) {
        // Conflict
-       const suggestions = e.response.data;
+       const detail = e.response.data.detail || {};
        renameModal.confirming = true;
-       renameModal.folderName = suggestions.suggested_folder_name || renameModal.folderName;
-       renameModal.fileName = suggestions.suggested_original_filename || renameModal.fileName;
+       if (detail.suggested_folder_name) {
+           renameModal.folderName = detail.suggested_folder_name;
+       }
+       if (detail.suggested_original_filename) {
+           renameModal.fileName = detail.suggested_original_filename;
+       }
+       // Note: display_name likely doesn't conflict, logic depends on backend, but usually it's metadata
+       
        renameModal.confirmMessage = 'Name conflict detected. Using suggested names. Click Confirm to proceed.';
     } else {
-       renameModal.error = e.response?.data?.message || 'Failed to rename';
+       const msg = typeof e.response?.data?.detail === 'string' 
+            ? e.response.data.detail 
+            : (e.response?.data?.message || 'Failed to rename');
+       renameModal.error = msg;
     }
   } finally {
     renameModal.submitting = false;
