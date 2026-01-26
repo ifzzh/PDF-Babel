@@ -180,8 +180,13 @@ def run_job(job_id: str):
         raise HTTPException(status_code=404, detail="job not found")
     if record.status != "queued":
         raise HTTPException(status_code=409, detail="job not queued")
-    if not EVENT_STORE.try_mark_running(record.id):
+    slot = EVENT_STORE.try_acquire_slot(
+        record.id, app.state.settings.max_running
+    )
+    if slot == "running":
         raise HTTPException(status_code=409, detail="job already running")
+    if slot == "limit":
+        raise HTTPException(status_code=429, detail="too many running jobs")
 
     def _worker():
         from backend.translator import run_translation_job

@@ -25,19 +25,23 @@ class JobEventStore:
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._jobs: dict[str, _JobEvents] = {}
+        self._running_count = 0
+
+    def _ensure_job_locked(self, job_id: str) -> _JobEvents:
+        job = self._jobs.get(job_id)
+        if job is None:
+            job = _JobEvents(
+                cond=threading.Condition(),
+                events=deque(maxlen=_MAX_EVENTS),
+                next_id=1,
+                cancel_event=None,
+            )
+            self._jobs[job_id] = job
+        return job
 
     def _ensure_job(self, job_id: str) -> _JobEvents:
         with self._lock:
-            job = self._jobs.get(job_id)
-            if job is None:
-                job = _JobEvents(
-                    cond=threading.Condition(),
-                    events=deque(maxlen=_MAX_EVENTS),
-                    next_id=1,
-                    cancel_event=None,
-                )
-                self._jobs[job_id] = job
-            return job
+            return self._ensure_job_locked(job_id)
 
     def set_cancel_event(self, job_id: str, cancel_event: threading.Event) -> None:
         job = self._ensure_job(job_id)
@@ -65,6 +69,17 @@ class JobEventStore:
             job.cond.notify_all()
             return payload
 
+    def try_acquire_slot(self, job_id: str, max_running: int) -> str:
+        with self._lock:
+            job = self._ensure_job_locked(job_id)
+            if job.running:
+                return "running"
+            if max_running > 0 and self._running_count >= max_running:
+                return "limit"
+            job.running = True
+            self._running_count += 1
+            return "ok"
+
     def try_mark_running(self, job_id: str) -> bool:
         job = self._ensure_job(job_id)
         with job.cond:
@@ -74,9 +89,13 @@ class JobEventStore:
             return True
 
     def clear_running(self, job_id: str) -> None:
-        job = self._ensure_job(job_id)
+        with self._lock:
+            job = self._ensure_job_locked(job_id)
+            if job.running:
+                job.running = False
+                if self._running_count > 0:
+                    self._running_count -= 1
         with job.cond:
-            job.running = False
             job.cond.notify_all()
 
     def wait_for_events(
