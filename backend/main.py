@@ -209,6 +209,12 @@ def cancel_job(job_id: str):
     return {"job_id": record.id, "status": "canceling"}
 
 
+@app.get("/api/queue")
+def get_queue():
+    SCHEDULER.configure(app.state.settings.max_running)
+    return SCHEDULER.snapshot()
+
+
 @app.get("/api/jobs")
 def list_jobs_endpoint(
     created_from: str | None = None,

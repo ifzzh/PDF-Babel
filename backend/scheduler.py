@@ -32,6 +32,14 @@ class JobScheduler:
                 return True
         return False
 
+    def snapshot(self) -> dict[str, list[str] | int]:
+        with self._lock:
+            return {
+                "max_running": self._max_running,
+                "running": list(self._running),
+                "queued": list(self._queue),
+            }
+
     def _try_dispatch(self, settings, storage) -> None:
         start_jobs: list[str] = []
         with self._lock:
