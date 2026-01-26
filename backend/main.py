@@ -1,5 +1,6 @@
 import json
-import time
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -74,6 +75,9 @@ def _format_sse(event: dict) -> str:
     if "id" in event:
         return f"id: {event['id']}\ndata: {data}\n\n"
     return f"data: {data}\n\n"
+
+
+_SSE_TZ = ZoneInfo("Asia/Shanghai")
 
 
 @app.post("/api/jobs")
@@ -160,7 +164,7 @@ def job_events(job_id: str):
             heartbeat = {
                 "type": "heartbeat",
                 "job_id": job_id,
-                "ts": time.strftime("%Y-%m-%dT%H:%M:%S+08:00"),
+                "ts": datetime.now(tz=_SSE_TZ).isoformat(timespec="seconds"),
                 "data": {},
             }
             yield _format_sse(heartbeat)
