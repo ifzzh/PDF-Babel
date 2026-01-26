@@ -44,6 +44,7 @@
 - 展示：文件名、类型、大小、下载按钮
 - 预览：选中文件后用 PDF.js 预览
 - 预览 URL 使用 `/api/files/{file_id}`（必须支持 Range）
+- 下载命名：不要覆盖后端返回的 `Content-Disposition`；original 保持原名，mono/dual 使用 `{原名stem}.mono/.dual.pdf`
 
 7) **错误处理与状态反馈**
 - 上传失败、翻译失败、SSE 中断等必须提示
@@ -60,6 +61,18 @@
 - 支持修改：文件夹名 + 原始文件名
 - 命名冲突时后端返回建议名称，前端弹窗确认后再提交
 - 前端需展示 `renamed_at`（若为 null 则不显示）
+
+10) **任务队列与手动恢复**
+- 前端需展示**当前运行任务**与**排队任务**（队列面板或历史页顶部）
+- 队列数据来自 `GET /api/queue`
+- 提供“恢复队列”按钮：调用 `POST /api/queue/resume`，请求体为 `{ "mode": "all" }`
+- 支持对单条排队任务点击“恢复此任务”：调用 `POST /api/queue/resume`，请求体为 `{ "job_ids": ["..."] }`
+- 说明：服务重启后不会自动继续执行，需要用户手动恢复
+
+11) **接口对接注意事项**
+- `POST /api/jobs` 使用 multipart：`options` 与 `source` 为 **JSON 字符串**（不是 JSON 对象）
+- 队列快照只返回 job_id，若需显示名称/时间，请用 `GET /api/jobs` 或 `GET /api/jobs/{id}` 补全
+- 未实现 `glossary_files` 时可暂不上传（后端允许缺省）
 
 ---
 
@@ -115,6 +128,7 @@ interface ChannelDef {
 4) `finish` 后拉取 `/api/jobs/{id}/files`
 5) 选择结果 -> `/api/files/{file_id}` 预览
 6) 首页按钮 -> 历史页面 -> `GET /api/jobs` -> 列表 -> 进入详情
+7) 队列面板（可选页面/区域）-> `GET /api/queue` -> 显示 running/queued -> 手动恢复
 
 ---
 

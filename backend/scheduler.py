@@ -44,6 +44,9 @@ class JobScheduler:
                 "queued": list(self._queue),
             }
 
+    def dispatch(self, settings, storage) -> None:
+        self._try_dispatch(settings, storage)
+
     def _try_dispatch(self, settings, storage) -> None:
         start_jobs: list[str] = []
         with self._lock:

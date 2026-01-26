@@ -112,8 +112,8 @@ curl -sSf -X POST http://127.0.0.1:8000/api/jobs \\
 查询任务：\n
 
 ```bash
-curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id'
-curl -sSf http://127.0.0.1:8000/api/jobs/{job_id} | jq .
+JOB_ID=$(curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id')
+curl -sSf http://127.0.0.1:8000/api/jobs/$JOB_ID | jq .
 ```
 
 期望：能看到 `folder_name` 与 `original_filename`。
@@ -139,7 +139,7 @@ curl -sSf \"http://127.0.0.1:8000/api/jobs?created_from=2026-01-25T00:00:00%2B08
 获取最新任务的 `job_id`（也可使用 /api/jobs 列表查询）：
 
 ```bash
-curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id'
+JOB_ID=$(curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id')
 ```
 
 可以手动在数据库里将状态改为 `finished`（仅用于测试）：
@@ -147,20 +147,20 @@ curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].j
 **单行写法（推荐）：**
 
 ```bash
-sqlite3 /mnt/raid1/babeldoc-data/db/db.sqlite3 "update jobs set status='finished' where id='YOUR_JOB_ID';"
+sqlite3 /mnt/raid1/babeldoc-data/db/db.sqlite3 "update jobs set status='finished' where id='${JOB_ID}';"
 ```
 
 **多行写法（注意每行末尾使用单个反斜杠 `\\` 作为续行）：**
 
 ```bash
 sqlite3 /mnt/raid1/babeldoc-data/db/db.sqlite3 \\
-  "update jobs set status='finished' where id='YOUR_JOB_ID';"
+  "update jobs set status='finished' where id='${JOB_ID}';"
 ```
 
 重命名测试（folder + original 文件名）：
 
 ```bash
-curl -sSf -X PATCH http://127.0.0.1:8000/api/jobs/02757bac-6856-4af6-a4e9-401a46c98ecd \
+curl -sSf -X PATCH http://127.0.0.1:8000/api/jobs/$JOB_ID \
   -H 'Content-Type: application/json' \
   -d '{"folder_name":"KuaRenamed","original_filename":"KuaRenamed.pdf","confirm":false}' | jq .
 ```
@@ -168,7 +168,7 @@ curl -sSf -X PATCH http://127.0.0.1:8000/api/jobs/02757bac-6856-4af6-a4e9-401a46
 若命名冲突，将返回 409，并给出建议名；用户确认后再提交：
 
 ```bash
-curl -sSf -X PATCH http://127.0.0.1:8000/api/jobs/02757bac-6856-4af6-a4e9-401a46c98ecd \
+curl -sSf -X PATCH http://127.0.0.1:8000/api/jobs/$JOB_ID \
   -H 'Content-Type: application/json' \
   -d '{"folder_name":"KuaRenamed_20260125-011500","original_filename":"KuaRenamed_20260125-011500.pdf","confirm":true}' | jq .
 ```
@@ -186,7 +186,8 @@ ls -la /mnt/raid1/babeldoc-data/jobs/KuaRenamed
 ## 11. 验证 /api/jobs/{id}/files
 
 ```bash
-curl -sSf http://127.0.0.1:8000/api/jobs/02757bac-6856-4af6-a4e9-401a46c98ecd/files | jq .
+JOB_ID=$(curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id')
+curl -sSf http://127.0.0.1:8000/api/jobs/$JOB_ID/files | jq .
 ```
 
 期望：返回数组，至少包含 `type=original` 的记录。
@@ -199,7 +200,9 @@ curl -sSf http://127.0.0.1:8000/api/jobs/02757bac-6856-4af6-a4e9-401a46c98ecd/fi
 先从上一步返回中取一个 `file_id`，测试 Range 下载：
 
 ```bash
-curl -sSf -H "Range: bytes=0-99" -D - http://127.0.0.1:8000/api/files/5b483390-6465-4473-a2fd-17deddcebf8c -o /tmp/sample.pdf
+JOB_ID=$(curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id')
+FILE_ID=$(curl -sSf http://127.0.0.1:8000/api/jobs/$JOB_ID/files | jq -r '.[0].file_id')
+curl -sSf -H "Range: bytes=0-99" -D - http://127.0.0.1:8000/api/files/$FILE_ID -o /tmp/sample.pdf
 ```
 
 期望：
@@ -214,7 +217,7 @@ curl -sSf -H "Range: bytes=0-99" -D - http://127.0.0.1:8000/api/files/5b483390-6
 - 仅允许 `status=queued` 的任务执行，若已完成需重新创建任务。
 - 可通过环境变量 `BABELDOC_MAX_RUNNING` 控制并发上限（默认 1）。
 - 当并发已满时，本接口会返回 `status=queued`，任务进入队列等待执行。
-- 队列状态已持久化到数据库，服务重启后会恢复队列，并把 `running` 任务重置为 `queued`。
+- 队列状态已持久化到数据库，服务重启后会恢复队列，并把 `running` 任务重置为 `queued`（需调用 `/api/queue/resume` 才会继续执行）。
 
 示例（DeepSeek 自定义渠道）：
 
@@ -230,8 +233,8 @@ curl -sSf -X POST http://127.0.0.1:8000/api/jobs \
 执行：
 
 ```bash
-curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id'
-curl -sSf -X POST http://127.0.0.1:8000/api/jobs/{job_id}/run | jq .
+JOB_ID=$(curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id')
+curl -sSf -X POST http://127.0.0.1:8000/api/jobs/$JOB_ID/run | jq .
 ```
 
 期望：
@@ -241,14 +244,15 @@ curl -sSf -X POST http://127.0.0.1:8000/api/jobs/{job_id}/run | jq .
 可用下面方式等待完成（任选其一）：
 
 ```bash
-curl -sSf http://127.0.0.1:8000/api/jobs/{job_id} | jq .
+JOB_ID=$(curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id')
+curl -sSf http://127.0.0.1:8000/api/jobs/$JOB_ID | jq .
 ```
 
 可选检查（查看文件列表）：
 
 ```bash
-curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id'
-curl -sSf http://127.0.0.1:8000/api/jobs/{job_id}/files | jq .
+JOB_ID=$(curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id')
+curl -sSf http://127.0.0.1:8000/api/jobs/$JOB_ID/files | jq .
 ```
 
 失败排查：
@@ -259,15 +263,15 @@ curl -sSf http://127.0.0.1:8000/api/jobs/{job_id}/files | jq .
 在一个终端保持监听：
 
 ```bash
-curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id'
-curl -N http://127.0.0.1:8000/api/jobs/{job_id}/events
+JOB_ID=$(curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id')
+curl -N http://127.0.0.1:8000/api/jobs/$JOB_ID/events
 ```
 
 在另一个终端执行翻译：
 
 ```bash
-curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id'
-curl -sSf -X POST http://127.0.0.1:8000/api/jobs/{job_id}/run | jq .
+JOB_ID=$(curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id')
+curl -sSf -X POST http://127.0.0.1:8000/api/jobs/$JOB_ID/run | jq .
 ```
 
 期望：
@@ -278,15 +282,15 @@ curl -sSf -X POST http://127.0.0.1:8000/api/jobs/{job_id}/run | jq .
 在一个终端执行翻译（会阻塞）：
 
 ```bash
-curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id'
-curl -sSf -X POST http://127.0.0.1:8000/api/jobs/{job_id}/run | jq .
+JOB_ID=$(curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id')
+curl -sSf -X POST http://127.0.0.1:8000/api/jobs/$JOB_ID/run | jq .
 ```
 
 翻译过程中在另一个终端发送取消请求：
 
 ```bash
-curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id'
-curl -sSf -X POST http://127.0.0.1:8000/api/jobs/{job_id}/cancel | jq .
+JOB_ID=$(curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id')
+curl -sSf -X POST http://127.0.0.1:8000/api/jobs/$JOB_ID/cancel | jq .
 ```
 
 期望：
@@ -340,6 +344,29 @@ curl -sSf http://127.0.0.1:8000/api/queue | jq .
 
 期望：
 - 返回 `max_running`、`running`、`queued`
+
+## 18. 恢复队列执行（/api/queue/resume）
+
+全量恢复（将队列中的任务重新触发执行）：
+
+```bash
+curl -sSf -X POST http://127.0.0.1:8000/api/queue/resume \
+  -H 'Content-Type: application/json' \
+  -d '{"mode":"all"}' | jq .
+```
+
+仅恢复部分任务（先从队列快照中取一个 `job_id`）：
+
+```bash
+JOB_ID=$(curl -sSf http://127.0.0.1:8000/api/queue | jq -r '.queued[0]')
+curl -sSf -X POST http://127.0.0.1:8000/api/queue/resume \
+  -H 'Content-Type: application/json' \
+  -d "{\"job_ids\":[\"$JOB_ID\"]}" | jq .
+```
+
+期望：
+- 返回 `accepted` 与 `skipped` 列表
+- 只有 `queued` 的任务会进入 `accepted`
 
 ## 13. 常见问题
 

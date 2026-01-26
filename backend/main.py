@@ -221,6 +221,56 @@ def get_queue():
     }
 
 
+@app.post("/api/queue/resume")
+def resume_queue(payload: dict):
+    mode = payload.get("mode")
+    job_ids = payload.get("job_ids")
+    if mode is None and job_ids is None:
+        raise HTTPException(status_code=400, detail="missing mode/job_ids")
+    if mode not in (None, "all"):
+        raise HTTPException(status_code=400, detail="invalid mode")
+    if mode == "all" and job_ids is not None:
+        raise HTTPException(status_code=400, detail="mode conflicts with job_ids")
+    if job_ids is not None:
+        if not isinstance(job_ids, list) or not job_ids:
+            raise HTTPException(status_code=400, detail="invalid job_ids")
+        for item in job_ids:
+            if not isinstance(item, str) or not item:
+                raise HTTPException(status_code=400, detail="invalid job_ids")
+
+    snapshot = queue_store.snapshot(app.state.settings)
+    queued = snapshot["queued"]
+    queued_set = set(queued)
+    running_set = set(snapshot["running"])
+
+    accepted: list[str] = []
+    skipped: list[dict[str, str]] = []
+
+    if mode == "all":
+        accepted = queued
+    else:
+        want = set(job_ids or [])
+        seen: set[str] = set()
+        for job_id in queued:
+            if job_id in want and job_id not in seen:
+                accepted.append(job_id)
+                seen.add(job_id)
+        for job_id in job_ids or []:
+            if job_id in seen:
+                continue
+            if job_id in running_set:
+                skipped.append({"job_id": job_id, "reason": "running"})
+            elif job_id not in queued_set:
+                skipped.append({"job_id": job_id, "reason": "not_queued"})
+
+    if accepted:
+        SCHEDULER.load_queued(accepted)
+        SCHEDULER.configure(app.state.settings.max_running)
+        SCHEDULER.dispatch(app.state.settings, app.state.storage)
+
+    return {"accepted": accepted, "skipped": skipped}
+
+
 @app.get("/api/jobs")
 def list_jobs_endpoint(
     created_from: str | None = None,

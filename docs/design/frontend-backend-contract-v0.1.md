@@ -109,6 +109,8 @@
 ### 2.2 可选扩展接口（v0.1 推荐）
 
 - `GET /api/jobs`：查询历史任务列表（用于“历史/文件夹”页面）
+- `GET /api/queue`：查询当前队列快照（运行中/排队中）
+- `POST /api/queue/resume`：手动恢复队列执行（用于重启后/手动启动）
 
 响应示例：
 
@@ -133,6 +135,51 @@
 - `folder_name` 为后端生成的展示字符串，规则：`{原文件名stem}`  
 - 若同名冲突，后端可追加短后缀，例如 `paper_a1b2`  
 - 前端只展示，不做解析与改写
+
+### 2.3 队列快照（/api/queue）
+
+响应示例：
+
+```json
+{
+  "max_running": 1,
+  "running": ["uuid-1"],
+  "queued": ["uuid-2", "uuid-3"]
+}
+```
+
+说明：
+- `running` / `queued` 仅包含任务 ID
+- `max_running` 为并发上限
+
+### 2.4 恢复队列（/api/queue/resume）
+
+请求体（二选一）：
+
+```json
+{ "mode": "all" }
+```
+
+```json
+{ "job_ids": ["uuid-1", "uuid-2"] }
+```
+
+响应示例：
+
+```json
+{
+  "accepted": ["uuid-2"],
+  "skipped": [
+    { "job_id": "uuid-1", "reason": "running" },
+    { "job_id": "uuid-x", "reason": "not_queued" }
+  ]
+}
+```
+
+说明：
+- 只会接受 `queued` 状态的任务
+- `skipped.reason` 可能为 `running` / `not_queued`
+- 该接口用于**手动启动**队列（服务重启后不会自动执行）
 
 ### 2.1 渠道定义（/api/channels）
 
@@ -288,6 +335,14 @@
 ```json
 { "message": "error text" }
 ```
+
+### 4.1 前端队列与进度展示（约定）
+
+- 前端需展示**当前运行任务**与**队列中的任务**
+- 队列数据来自 `GET /api/queue`
+- 任务进度来自 SSE（`/api/jobs/{id}/events`）
+- 提供“**恢复队列**”按钮（调用 `POST /api/queue/resume` 的 `mode=all`）
+- 列表项可提供“恢复此任务”入口（调用 `POST /api/queue/resume` 的 `job_ids`）
 
 ## 5. 文件列表
 
