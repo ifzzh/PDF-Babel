@@ -214,6 +214,7 @@ curl -sSf -H "Range: bytes=0-99" -D - http://127.0.0.1:8000/api/files/5b483390-6
 - 仅允许 `status=queued` 的任务执行，若已完成需重新创建任务。
 - 可通过环境变量 `BABELDOC_MAX_RUNNING` 控制并发上限（默认 1）。
 - 当并发已满时，本接口会返回 `status=queued`，任务进入队列等待执行。
+- 队列状态已持久化到数据库，服务重启后会恢复队列，并把 `running` 任务重置为 `queued`。
 
 示例（DeepSeek 自定义渠道）：
 
