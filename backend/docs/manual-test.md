@@ -112,6 +112,7 @@ curl -sSf -X POST http://127.0.0.1:8000/api/jobs \\
 查询任务：\n
 
 ```bash
+curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id'
 curl -sSf http://127.0.0.1:8000/api/jobs/{job_id} | jq .
 ```
 
@@ -225,6 +226,7 @@ curl -sSf -X POST http://127.0.0.1:8000/api/jobs \
 执行：
 
 ```bash
+curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id'
 curl -sSf -X POST http://127.0.0.1:8000/api/jobs/{job_id}/run | jq .
 ```
 
@@ -235,6 +237,7 @@ curl -sSf -X POST http://127.0.0.1:8000/api/jobs/{job_id}/run | jq .
 可选检查（查看文件列表）：
 
 ```bash
+curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id'
 curl -sSf http://127.0.0.1:8000/api/jobs/{job_id}/files | jq .
 ```
 
@@ -246,12 +249,14 @@ curl -sSf http://127.0.0.1:8000/api/jobs/{job_id}/files | jq .
 在一个终端保持监听：
 
 ```bash
+curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id'
 curl -N http://127.0.0.1:8000/api/jobs/{job_id}/events
 ```
 
 在另一个终端执行翻译：
 
 ```bash
+curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id'
 curl -sSf -X POST http://127.0.0.1:8000/api/jobs/{job_id}/run | jq .
 ```
 
@@ -263,12 +268,14 @@ curl -sSf -X POST http://127.0.0.1:8000/api/jobs/{job_id}/run | jq .
 在一个终端执行翻译（会阻塞）：
 
 ```bash
+curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id'
 curl -sSf -X POST http://127.0.0.1:8000/api/jobs/{job_id}/run | jq .
 ```
 
 翻译过程中在另一个终端发送取消请求：
 
 ```bash
+curl -sSf "http://127.0.0.1:8000/api/jobs?limit=1&offset=0" | jq -r '.items[0].job_id'
 curl -sSf -X POST http://127.0.0.1:8000/api/jobs/{job_id}/cancel | jq .
 ```
 
