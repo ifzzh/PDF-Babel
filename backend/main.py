@@ -127,6 +127,7 @@ def get_job(job_id: str):
         "updated_at": record.updated_at,
         "renamed_at": record.renamed_at,
         "folder_name": record.folder_name,
+        "display_name": record.display_name,
         "original_filename": record.original_filename,
     }
 
@@ -297,6 +298,7 @@ def list_jobs_endpoint(
             {
                 "job_id": job.id,
                 "folder_name": job.folder_name,
+                "display_name": job.display_name,
                 "created_at": job.created_at,
                 "renamed_at": job.renamed_at,
                 "status": job.status,
@@ -313,8 +315,9 @@ def list_jobs_endpoint(
 def rename_job_endpoint(job_id: str, payload: dict):
     folder_name = payload.get("folder_name")
     original_filename = payload.get("original_filename")
+    display_name = payload.get("display_name")
     confirm = bool(payload.get("confirm", False))
-    if folder_name is None and original_filename is None:
+    if folder_name is None and original_filename is None and display_name is None:
         raise HTTPException(status_code=400, detail="no changes provided")
     try:
         record, suggestions = rename_job(
@@ -323,6 +326,7 @@ def rename_job_endpoint(job_id: str, payload: dict):
             job_id,
             folder_name,
             original_filename,
+            display_name,
             confirm,
         )
     except PermissionError as exc:
@@ -344,6 +348,7 @@ def rename_job_endpoint(job_id: str, payload: dict):
     return {
         "job_id": record.id,
         "folder_name": record.folder_name,
+        "display_name": record.display_name,
         "original_filename": record.original_filename,
         "renamed_at": record.renamed_at,
         "updated_at": record.updated_at,

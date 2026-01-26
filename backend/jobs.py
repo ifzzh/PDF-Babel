@@ -18,6 +18,7 @@ _INVALID_CHARS = set('/\\:*?"<>|')
 class JobRecord:
     id: str
     folder_name: str
+    display_name: str | None
     original_filename: str
     created_at: str
     updated_at: str
@@ -66,6 +67,18 @@ def _normalize_original_filename(value: str) -> str:
     return name
 
 
+def _normalize_display_name(value: str) -> str:
+    if value is None:
+        raise ValueError("display_name is required")
+    cleaned = str(value).strip()
+    if not cleaned:
+        raise ValueError("display_name is empty")
+    for ch in cleaned:
+        if ord(ch) < 32:
+            raise ValueError("display_name contains invalid characters")
+    return cleaned
+
+
 def _suggest_folder_name(base_name: str) -> str:
     return f"{base_name}_{_time_suffix()}"
 
@@ -109,6 +122,7 @@ def create_job(
     record = JobRecord(
         id=job_id,
         folder_name=folder_name,
+        display_name=stem,
         original_filename=safe_name,
         created_at=created_at,
         updated_at=created_at,
@@ -124,13 +138,14 @@ def create_job(
         conn.execute(
             """
             INSERT INTO jobs (
-                id, folder_name, original_filename, created_at, updated_at,
+                id, folder_name, display_name, original_filename, created_at, updated_at,
                 renamed_at, status, options_json, source_json, error
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 record.id,
                 record.folder_name,
+                record.display_name,
                 record.original_filename,
                 record.created_at,
                 record.updated_at,
@@ -162,7 +177,7 @@ def get_job_by_id(settings: Settings, job_id: str) -> JobRecord | None:
     try:
         row = conn.execute(
             """
-            SELECT id, folder_name, original_filename, created_at, updated_at,
+            SELECT id, folder_name, display_name, original_filename, created_at, updated_at,
                    renamed_at, status, options_json, source_json, error
             FROM jobs
             WHERE id = ?
@@ -176,14 +191,15 @@ def get_job_by_id(settings: Settings, job_id: str) -> JobRecord | None:
     return JobRecord(
         id=row[0],
         folder_name=row[1],
-        original_filename=row[2],
-        created_at=row[3],
-        updated_at=row[4],
-        renamed_at=row[5],
-        status=row[6],
-        options_json=row[7],
-        source_json=row[8],
-        error=row[9],
+        display_name=row[2],
+        original_filename=row[3],
+        created_at=row[4],
+        updated_at=row[5],
+        renamed_at=row[6],
+        status=row[7],
+        options_json=row[8],
+        source_json=row[9],
+        error=row[10],
     )
 
 
@@ -230,7 +246,7 @@ def list_jobs(
     where_sql = f"WHERE {' AND '.join(clauses)}" if clauses else ""
     count_sql = f"SELECT COUNT(1) FROM jobs {where_sql}"
     list_sql = (
-        "SELECT id, folder_name, original_filename, created_at, updated_at, "
+        "SELECT id, folder_name, display_name, original_filename, created_at, updated_at, "
         "renamed_at, status, options_json, source_json, error "
         f"FROM jobs {where_sql} ORDER BY created_at DESC LIMIT ? OFFSET ?"
     )
@@ -244,14 +260,15 @@ def list_jobs(
         JobRecord(
             id=row[0],
             folder_name=row[1],
-            original_filename=row[2],
-            created_at=row[3],
-            updated_at=row[4],
-            renamed_at=row[5],
-            status=row[6],
-            options_json=row[7],
-            source_json=row[8],
-            error=row[9],
+            display_name=row[2],
+            original_filename=row[3],
+            created_at=row[4],
+            updated_at=row[5],
+            renamed_at=row[6],
+            status=row[7],
+            options_json=row[8],
+            source_json=row[9],
+            error=row[10],
         )
         for row in rows
     ]
@@ -264,6 +281,7 @@ def rename_job(
     job_id: str,
     folder_name: str | None,
     original_filename: str | None,
+    display_name: str | None,
     confirm: bool,
 ) -> tuple[JobRecord, dict[str, str] | None]:
     record = get_job_by_id(settings, job_id)
@@ -273,15 +291,19 @@ def rename_job(
         raise PermissionError("rename_not_allowed")
 
     new_folder_name = record.folder_name
+    new_display_name = record.display_name or Path(record.original_filename).stem
     new_original_filename = record.original_filename
     if folder_name is not None:
         new_folder_name = _normalize_folder_name(folder_name)
     if original_filename is not None:
         new_original_filename = _normalize_original_filename(original_filename)
+    if display_name is not None:
+        new_display_name = _normalize_display_name(display_name)
 
     if (
         new_folder_name == record.folder_name
         and new_original_filename == record.original_filename
+        and new_display_name == (record.display_name or Path(record.original_filename).stem)
     ):
         return record, None
 
@@ -321,11 +343,12 @@ def rename_job(
         conn.execute(
             """
             UPDATE jobs
-            SET folder_name = ?, original_filename = ?, updated_at = ?, renamed_at = ?
+            SET folder_name = ?, display_name = ?, original_filename = ?, updated_at = ?, renamed_at = ?
             WHERE id = ?
             """,
             (
                 new_folder_name,
+                new_display_name,
                 new_original_filename,
                 renamed_at,
                 renamed_at,

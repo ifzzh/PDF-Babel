@@ -11,6 +11,7 @@ def init_db(db_path: Path) -> None:
             CREATE TABLE IF NOT EXISTS jobs (
                 id TEXT PRIMARY KEY,
                 folder_name TEXT NOT NULL,
+                display_name TEXT,
                 original_filename TEXT NOT NULL,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
@@ -56,5 +57,19 @@ def init_db(db_path: Path) -> None:
         columns = [row[1] for row in conn.execute("PRAGMA table_info(jobs)")]
         if "renamed_at" not in columns:
             conn.execute("ALTER TABLE jobs ADD COLUMN renamed_at TEXT")
+        if "display_name" not in columns:
+            conn.execute("ALTER TABLE jobs ADD COLUMN display_name TEXT")
+        rows = conn.execute(
+            "SELECT id, original_filename, display_name FROM jobs"
+        ).fetchall()
+        for job_id, original_filename, display_name in rows:
+            if display_name:
+                continue
+            stem = Path(original_filename).stem or "document"
+            conn.execute(
+                "UPDATE jobs SET display_name = ? WHERE id = ?",
+                (stem, job_id),
+            )
+        conn.commit()
     finally:
         conn.close()
