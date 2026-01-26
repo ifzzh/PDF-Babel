@@ -7,6 +7,8 @@ MODEL="${BABELDOC_MODEL:-deepseek-chat}"
 SERVER_URL="${BABELDOC_SERVER_URL:-http://127.0.0.1:8000}"
 PDF_PATH="${BABELDOC_PDF_PATH:-/home/ifzzh/Project/PDF-Babel/test-pdf/Kua.pdf}"
 CANCEL_DELAY="${BABELDOC_CANCEL_DELAY:-2}"
+WAIT_SECONDS="${BABELDOC_WAIT_SECONDS:-1200}"
+POLL_INTERVAL="${BABELDOC_POLL_INTERVAL:-2}"
 
 if [[ -z "$API_KEY" ]]; then
   echo "缺少环境变量 BABELDOC_API_KEY" >&2
@@ -52,11 +54,8 @@ SSE_PID=$!
 
 sleep 1
 
-# 启动翻译（后台）
-set +e
-curl -sS -X POST "$SERVER_URL/api/jobs/$JOB_ID/run" > "$RUN_OUT" &
-RUN_PID=$!
-set -e
+# 启动翻译（异步接口，立即返回）
+curl -sS -X POST "$SERVER_URL/api/jobs/$JOB_ID/run" > "$RUN_OUT"
 
 # 等一会儿再取消
 sleep "$CANCEL_DELAY"
@@ -65,8 +64,6 @@ echo "--- 发送取消 ---"
 CANCEL_RES=$(curl -sS -X POST "$SERVER_URL/api/jobs/$JOB_ID/cancel")
 echo "$CANCEL_RES" | jq .
 
-wait "$RUN_PID" || true
-
 echo "\n--- run 响应 ---"
 if [[ -s "$RUN_OUT" ]]; then
   cat "$RUN_OUT" | jq .
@@ -74,7 +71,22 @@ else
   echo "run 输出为空"
 fi
 
-echo "\n--- 当前任务状态 ---"
+elapsed=0
+status=""
+while true; do
+  status=$(curl -sSf "$SERVER_URL/api/jobs/$JOB_ID" | jq -r '.status')
+  if [[ "$status" == "finished" || "$status" == "failed" || "$status" == "canceled" ]]; then
+    break
+  fi
+  if (( elapsed >= WAIT_SECONDS )); then
+    echo "等待超时，当前状态：$status" >&2
+    break
+  fi
+  sleep "$POLL_INTERVAL"
+  elapsed=$((elapsed + POLL_INTERVAL))
+done
+
+echo "\n--- 当前任务状态：$status ---"
 curl -sSf "$SERVER_URL/api/jobs/$JOB_ID" | jq .
 
 echo "\n--- SSE 日志（最后 50 行）---"

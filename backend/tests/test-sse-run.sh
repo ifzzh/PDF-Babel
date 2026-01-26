@@ -6,6 +6,8 @@ BASE_URL="${BABELDOC_BASE_URL:-https://api.deepseek.com/v1}"
 MODEL="${BABELDOC_MODEL:-deepseek-chat}"
 SERVER_URL="${BABELDOC_SERVER_URL:-http://127.0.0.1:8000}"
 PDF_PATH="${BABELDOC_PDF_PATH:-/home/ifzzh/Project/PDF-Babel/test-pdf/Kua.pdf}"
+WAIT_SECONDS="${BABELDOC_WAIT_SECONDS:-1200}"
+POLL_INTERVAL="${BABELDOC_POLL_INTERVAL:-2}"
 
 if [[ -z "$API_KEY" ]]; then
   echo "缺少环境变量 BABELDOC_API_KEY" >&2
@@ -51,6 +53,23 @@ SSE_PID=$!
 sleep 1
 
 curl -sSf -X POST "$SERVER_URL/api/jobs/$JOB_ID/run" | jq .
+
+elapsed=0
+status=""
+while true; do
+  status=$(curl -sSf "$SERVER_URL/api/jobs/$JOB_ID" | jq -r '.status')
+  if [[ "$status" == "finished" || "$status" == "failed" || "$status" == "canceled" ]]; then
+    break
+  fi
+  if (( elapsed >= WAIT_SECONDS )); then
+    echo "等待超时，当前状态：$status" >&2
+    break
+  fi
+  sleep "$POLL_INTERVAL"
+  elapsed=$((elapsed + POLL_INTERVAL))
+done
+
+echo "\n--- 最终状态：$status ---"
 
 echo "\n--- SSE 日志（最后 50 行）---"
 tail -n 50 "$SSE_LOG" || true
