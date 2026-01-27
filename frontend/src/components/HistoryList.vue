@@ -70,65 +70,78 @@
              >
            </div>
            
-           <div class="flex-1 min-w-0">
-              <div class="flex flex-col min-w-0">
-                <div class="min-w-0">
+           <div class="flex-1 min-w-0 self-stretch flex flex-col">
+              <div>
+                <div class="flex items-center space-x-2 min-w-0">
                   <router-link 
                       :to="'/history/' + job.job_id"
-                      class="block font-medium text-lg text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer truncate"
+                      class="block font-medium text-lg text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer truncate min-w-0 max-w-[80%]"
                       :title="stripExtension(job.display_name || job.original_filename || job.folder_name || 'Untitled')"
                    >
                       {{ stripExtension(job.display_name || job.original_filename || job.folder_name || 'Untitled') }}
                    </router-link>
-                </div>
-                <div class="mt-1">
-                  <span 
-                    class="inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize"
-                    :class="{
-                      'bg-yellow-100 text-yellow-700': job.status === 'queued',
-                      'bg-blue-100 text-blue-700': job.status === 'running',
-                      'bg-green-100 text-green-700': job.status === 'finished',
-                      'bg-red-100 text-red-700': job.status === 'failed',
+                <span 
+                  class="px-2 py-0.5 rounded text-xs font-medium capitalize whitespace-nowrap shrink-0"
+                  :class="{
+                    'bg-yellow-100 text-yellow-700': job.status === 'queued',
+                    'bg-blue-100 text-blue-700': job.status === 'running',
+                    'bg-green-100 text-green-700': job.status === 'finished',
+                    'bg-red-100 text-red-700': job.status === 'failed',
                       'bg-gray-100 text-gray-600': job.status === 'canceled'
                     }"
                   >
                     {{ job.status }}
                   </span>
                 </div>
-              </div>
-              
-              <div class="mt-1 text-sm text-gray-500 flex items-center space-x-4">
-                 <span>ID: {{ job.job_id.slice(0, 8) }}...</span>
-                 <span>{{ formatTime(job.created_at) }}</span>
-                 <span v-if="job.renamed_at" class="text-xs text-gray-400">(Renamed: {{ formatTime(job.renamed_at) }})</span>
+                
+                <div class="mt-5 text-sm text-gray-500 flex items-center space-x-4">
+                   <span>ID: {{ job.job_id.slice(0, 8) }}...</span>
+                   <span>{{ formatTime(job.created_at) }}</span>
+                   <span v-if="job.renamed_at" class="text-xs text-gray-400">(Renamed: {{ formatTime(job.renamed_at) }})</span>
+                </div>
               </div>
 
-               <div class="mt-2 text-xs flex items-center space-x-2">
-                 <span v-if="job.has_mono" class="px-1.5 py-0.5 bg-purple-50 text-purple-600 border border-purple-100 rounded">Mono</span>
-                 <span v-if="job.has_dual" class="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded">Dual</span>
+               <div class="mt-auto pt-3 text-xs flex items-center space-x-2 min-h-[20px]">
+                 <span 
+                   :class="job.has_mono ? 'bg-purple-50 text-purple-600 border-purple-100' : 'bg-gray-50 text-gray-300 border-gray-200'"
+                   class="px-1.5 py-0.5 border rounded"
+                 >
+                   Mono
+                 </span>
+                 <span 
+                   :class="job.has_dual ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-gray-50 text-gray-300 border-gray-200'"
+                   class="px-1.5 py-0.5 border rounded"
+                 >
+                   Dual
+                 </span>
               </div>
            </div>
 
            <div class="flex flex-col space-y-2">
               <button 
                 @click="$emit('select', job.job_id)"
-                class="px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded border border-transparent hover:border-blue-100 transition-colors"
+                class="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-colors"
                 style="min-width: 80px"
               >
                 Details
               </button>
               
               <button 
-                v-if="['finished', 'failed', 'canceled'].includes(job.status)"
                 @click="openRename(job)"
-                class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded border border-transparent hover:border-gray-200 transition-colors"
+                :disabled="!['finished', 'failed', 'canceled'].includes(job.status)"
+                :class="[
+                  'px-3 py-1.5 text-sm font-medium rounded border transition-colors',
+                  ['finished', 'failed', 'canceled'].includes(job.status)
+                    ? 'text-gray-600 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
+                    : 'text-gray-300 bg-gray-50 border-gray-200 cursor-not-allowed'
+                ]"
               >
                 Rename
               </button>
 
               <button 
                 @click="confirmDelete(job.job_id)"
-                class="px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded border border-transparent hover:border-red-100 transition-colors"
+                class="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 rounded border border-red-200 hover:bg-red-100 hover:border-red-300 transition-colors"
               >
                 Delete
               </button>
