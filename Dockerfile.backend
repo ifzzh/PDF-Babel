@@ -19,8 +19,9 @@ COPY pyproject.toml uv.lock ./
 RUN pip install --no-cache-dir -U pip \
     && pip install --no-cache-dir uv \
     && uv export --frozen --no-dev -o /tmp/requirements.txt \
-    && pip install --no-cache-dir -r /tmp/requirements.txt \
-    && rm -f /tmp/requirements.txt
+    && grep -v '^-e file:///.*' /tmp/requirements.txt > /tmp/requirements.clean.txt \
+    && pip install --no-cache-dir -r /tmp/requirements.clean.txt \
+    && rm -f /tmp/requirements.txt /tmp/requirements.clean.txt
 
 COPY backend ./backend
 COPY babeldoc ./babeldoc
