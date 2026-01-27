@@ -74,6 +74,102 @@ def _validate_source(source: dict):
     return channel
 
 
+def _normalize_bool(value: object, field: str) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int) and value in (0, 1):
+        return bool(value)
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in ("true", "1", "yes"):
+            return True
+        if lowered in ("false", "0", "no"):
+            return False
+    raise HTTPException(status_code=400, detail=f"invalid options.{field}")
+
+
+def _normalize_int(value: object, field: str, *, min_value: int | None = None) -> int:
+    if value is None:
+        raise HTTPException(status_code=400, detail=f"invalid options.{field}")
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=f"invalid options.{field}") from exc
+    if min_value is not None and parsed < min_value:
+        raise HTTPException(
+            status_code=400,
+            detail=f"options.{field} must be >= {min_value}",
+        )
+    return parsed
+
+
+def _normalize_enum(value: object, field: str, allowed: set[str]) -> str:
+    if value is None:
+        raise HTTPException(status_code=400, detail=f"invalid options.{field}")
+    if not isinstance(value, str):
+        raise HTTPException(status_code=400, detail=f"invalid options.{field}")
+    if value not in allowed:
+        raise HTTPException(
+            status_code=400,
+            detail=f"invalid options.{field}",
+        )
+    return value
+
+
+def _validate_options(options: dict) -> dict:
+    bool_fields = (
+        "no_dual",
+        "no_mono",
+        "split_short_lines",
+        "skip_clean",
+        "enhance_compatibility",
+        "disable_rich_text_translate",
+        "skip_scanned_detection",
+        "ocr_workaround",
+        "auto_enable_ocr_workaround",
+        "add_formula_placehold_hint",
+        "disable_same_text_fallback",
+        "only_include_translated_page",
+    )
+    for field in bool_fields:
+        if field in options:
+            options[field] = _normalize_bool(options.get(field), field)
+
+    if "qps" in options:
+        options["qps"] = _normalize_int(options.get("qps"), "qps", min_value=1)
+
+    if "max_pages_per_part" in options:
+        options["max_pages_per_part"] = _normalize_int(
+            options.get("max_pages_per_part"),
+            "max_pages_per_part",
+            min_value=0,
+        )
+
+    if "watermark_output_mode" in options:
+        options["watermark_output_mode"] = _normalize_enum(
+            options.get("watermark_output_mode"),
+            "watermark_output_mode",
+            {"watermarked", "no_watermark"},
+        )
+
+    if "primary_font_family" in options:
+        options["primary_font_family"] = _normalize_enum(
+            options.get("primary_font_family"),
+            "primary_font_family",
+            {"serif", "sans-serif", "script"},
+        )
+
+    if options.get("no_dual") is True and options.get("no_mono") is True:
+        raise HTTPException(
+            status_code=400,
+            detail="invalid options: no_dual and no_mono cannot both be true",
+        )
+
+    return options
+
+
 def _format_sse(event: dict) -> str:
     data = json.dumps(event, ensure_ascii=False)
     if "id" in event:
@@ -97,6 +193,7 @@ async def create_job_endpoint(
     options_obj = _parse_json(options, "options") if options else {}
     source_obj = _parse_json(source, "source") if source else {}
     _validate_source(source_obj)
+    _validate_options(options_obj)
     if source_obj.get("mode") == "platform":
         source_obj.pop("credentials", None)
     content = await file.read()

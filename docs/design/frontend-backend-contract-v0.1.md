@@ -297,6 +297,13 @@
 }
 ```
 
+校验与约束（Phase 1）：
+- `no_dual` 与 `no_mono` 不能同时为 `true`
+- `qps` 必须为 `>= 1` 的整数
+- `max_pages_per_part` 必须为 `>= 0` 的整数（0 表示不分片）
+- `watermark_output_mode` 仅支持 `"watermarked"` / `"no_watermark"`（暂不支持 `"both"`）
+- `primary_font_family` 仅支持 `"serif"` / `"sans-serif"` / `"script"`
+
 响应：
 
 ```json
