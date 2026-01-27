@@ -8,6 +8,7 @@ export interface Job {
     renamed_at?: string;
     has_mono?: boolean;
     has_dual?: boolean;
+    has_glossary?: boolean;
 }
 
 export interface ChannelField {

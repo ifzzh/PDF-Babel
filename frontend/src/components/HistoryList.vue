@@ -114,6 +114,12 @@
                  >
                    Dual
                  </span>
+                 <span 
+                   :class="job.has_glossary ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-gray-50 text-gray-300 border-gray-200'"
+                   class="px-1.5 py-0.5 border rounded"
+                 >
+                   Glossary
+                 </span>
               </div>
            </div>
 
