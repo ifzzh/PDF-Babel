@@ -2,7 +2,7 @@
   <div class="bg-white rounded-lg shadow p-4 border border-gray-100">
     <div class="flex items-center justify-between mb-2">
       <span class="font-medium text-gray-800">{{ stageName }}</span>
-      <span class="text-sm font-bold text-blue-600">{{ overallProgress }}%</span>
+      <span class="text-sm font-bold text-blue-600">{{ overallProgress.toFixed(1) }}%</span>
     </div>
     
     <!-- Overall Progress -->
