@@ -386,6 +386,7 @@
 
 - `GET /api/files/{file_id}` 支持 `Range`
 - 前端可直接用该 URL 预览（PDF.js）
+- glossary 文件为 `text/csv`，下载名为 `{原名stem}.glossary.csv`
 
 ## 7. 重命名接口（PATCH /api/jobs/{id}）
 

@@ -626,6 +626,9 @@ def download_file(file_id: str, request: Request):
     elif record.type == "dual":
         download_name = f"{stem}.dual.pdf"
         disk_name = record.filename
+    elif record.type == "glossary":
+        download_name = f"{stem}.glossary.csv"
+        disk_name = record.filename
     else:
         download_name = record.filename
         disk_name = record.filename
@@ -662,17 +665,21 @@ def download_file(file_id: str, request: Request):
                 "Content-Length": str(end - start + 1),
             }
         )
+        media_type = (
+            "text/csv" if record.type == "glossary" else "application/pdf"
+        )
         return StreamingResponse(
             _iter_file_range(path, start, end),
             status_code=206,
-            media_type="application/pdf",
+            media_type=media_type,
             headers=headers,
         )
 
     headers["Content-Length"] = str(file_size)
+    media_type = "text/csv" if record.type == "glossary" else "application/pdf"
     return StreamingResponse(
         _iter_file_range(path, 0, file_size - 1),
-        media_type="application/pdf",
+        media_type=media_type,
         headers=headers,
     )
 

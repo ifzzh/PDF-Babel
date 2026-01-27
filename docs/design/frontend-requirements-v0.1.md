@@ -44,7 +44,7 @@
 - 展示：文件名、类型、大小、下载按钮
 - 预览：选中文件后用 PDF.js 预览
 - 预览 URL 使用 `/api/files/{file_id}`（必须支持 Range）
-- 下载命名：不要覆盖后端返回的 `Content-Disposition`；original 保持原名，mono/dual 使用 `{原名stem}.mono/.dual.pdf`
+- 下载命名：不要覆盖后端返回的 `Content-Disposition`；original 保持原名，mono/dual 使用 `{原名stem}.mono/.dual.pdf`，glossary 使用 `{原名stem}.glossary.csv`
 
 7) **错误处理与状态反馈**
 - 上传失败、翻译失败、SSE 中断等必须提示
