@@ -20,7 +20,7 @@
            <a 
               v-if="file"
               :href="file.url" 
-              :download="file.filename"
+              download
               class="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition-colors flex items-center gap-1"
            >
               <DownloadCloud class="w-3.5 h-3.5" />

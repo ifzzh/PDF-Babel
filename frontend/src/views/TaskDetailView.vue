@@ -74,7 +74,8 @@
                          >
                             <div class="flex items-center gap-3">
                                 <div class="p-2 bg-purple-100 rounded text-purple-600">
-                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <BookOpen v-if="file.type === 'glossary'" class="w-5 h-5 text-amber-600" />
+                                    <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
                                 </div>
@@ -110,7 +111,7 @@
                     <div class="flex items-center gap-2">
                         <a 
                             :href="previewFile.url" 
-                            :download="previewFile.filename"
+                            download
                             class="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition-colors flex items-center gap-1"
                         >
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -122,16 +123,25 @@
                 </div>
                 
                 <!-- PDF Viewer (iframe) -->
-                <div class="flex-1 bg-gray-200 overflow-hidden relative">
-                     <iframe 
-                        v-if="isPreviewable(previewFile)"
-                        :src="previewFile.url + '#toolbar=0'"
-                        class="w-full h-full border-none"
-                    ></iframe>
-                    <div v-else class="flex-1 flex flex-col items-center justify-center h-full text-gray-500">
-                        <p class="mb-2">Preview not available for this file type.</p>
-                        <a :href="previewFile.url" download class="text-blue-600 underline text-sm">Download to view</a>
-                    </div>
+                <div class="flex-1 bg-gray-200 overflow-hidden relative flex flex-col">
+                     <!-- Glossary Preview -->
+                     <GlossaryTable 
+                        v-if="previewFile && previewFile.type === 'glossary'"
+                        :file="previewFile"
+                        class="w-full h-full"
+                     />
+                     <!-- PDF Preview -->
+                     <template v-else-if="previewFile">
+                        <iframe 
+                            v-if="isPreviewable(previewFile)"
+                            :src="previewFile.url + '#toolbar=0'"
+                            class="w-full h-full border-none"
+                        ></iframe>
+                        <div v-else class="flex-1 flex flex-col items-center justify-center h-full text-gray-500">
+                            <p class="mb-2">Preview not available for this file type.</p>
+                            <a :href="previewFile.url" download class="text-blue-600 underline text-sm">Download to view</a>
+                        </div>
+                     </template>
                 </div>
             </div>
         </main>
@@ -143,6 +153,8 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { fetchJob, fetchJobFiles } from '../api';
+import GlossaryTable from '../components/GlossaryTable.vue';
+import { BookOpen } from 'lucide-vue-next';
 import type { Job, JobFile } from '../types';
 
 const route = useRoute();
@@ -162,20 +174,11 @@ const jobStatus = computed(() => job.value?.status);
 
 // Split files into Source (uploaded) vs Results (mono/dual/etc)
 const sourceFiles = computed(() => {
-    return files.value.filter(f => f.type === 'source' || f.type === 'original'); // Assuming 'source' or inferred
+    return files.value.filter(f => f.type === 'source' || f.type === 'original'); 
 });
 
-// Since API might not explicitly label "source", we might need logic. 
-// Usually 'uploaded' file is not in result list unless we specifically fetch it or if backend includes it.
-// Based on ResultList, it seems `fetchJobFiles` returns generated files.
-// Does it return the source file? Backend contract says:
-// GET /api/jobs/{id}/files -> returns list of files in the folder?
-// If it returns all, we can distinguish by type or name.
-// Let's assume for now everything is in the list and we group by logic:
-// Mono/Dual are results. Original is source.
-
 const resultFiles = computed(() => {
-    return files.value.filter(f => ['mono', 'dual', 'result'].includes(f.type) || (f.type !== 'source' && f.type !== 'original'));
+    return files.value.filter(f => ['mono', 'dual', 'result', 'glossary'].includes(f.type) || (f.type !== 'source' && f.type !== 'original'));
 });
 
 // Refine logic:

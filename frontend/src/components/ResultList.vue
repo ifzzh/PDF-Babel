@@ -27,7 +27,7 @@
             
             <div class="flex mt-3 space-x-2">
                <!-- Actions reused -->
-               <a :href="file.url" :download="file.filename" class="action-btn-download">
+               <a :href="file.url" download class="action-btn-download">
                   <DownloadCloud class="w-3.5 h-3.5" /> <span>Download</span>
                </a>
                <button @click="$emit('preview', file)" class="action-btn-preview">
@@ -50,7 +50,8 @@
              <div class="flex items-start justify-between">
                <div class="flex items-center space-x-2">
                  <div class="p-2 bg-purple-50 rounded">
-                   <FileIcon class="w-5 h-5 text-purple-500" />
+                   <BookOpen v-if="file.type === 'glossary'" class="w-5 h-5 text-amber-500" />
+                   <FileIcon v-else class="w-5 h-5 text-purple-500" />
                  </div>
                  <div class="min-w-0">
                    <p class="font-medium text-sm truncate w-full" :title="file.filename">{{ file.filename }}</p>
@@ -64,39 +65,63 @@
              </div>
              
              <div class="flex mt-3 space-x-2">
-                <a :href="file.url" :download="file.filename" class="action-btn-download">
+                <a :href="file.url" download class="action-btn-download">
                    <DownloadCloud class="w-3.5 h-3.5" /> <span>Download</span>
                 </a>
-                <button @click="$emit('preview', file)" class="action-btn-preview">
-                   <Eye class="w-3.5 h-3.5" /> <span>Preview</span>
+                <button @click="openPreview(file)" class="action-btn-preview">
+                   <template v-if="file.type === 'glossary'">
+                      <BookOpen class="w-3.5 h-3.5" /> <span>View Terms</span>
+                   </template>
+                   <template v-else>
+                      <Eye class="w-3.5 h-3.5" /> <span>Preview</span>
+                   </template>
                 </button>
              </div>
           </div>
         </div>
     </div>
+
+    <!-- Glossary Modal -->
+    <GlossaryModal 
+       :isOpen="!!glossaryFile" 
+       :file="glossaryFile" 
+       @close="glossaryFile = null" 
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { File as FileIcon, DownloadCloud, Eye } from 'lucide-vue-next';
+import { ref, computed } from 'vue';
+import { File as FileIcon, DownloadCloud, Eye, BookOpen } from 'lucide-vue-next';
+import GlossaryModal from './GlossaryModal.vue';
 import type { JobFile } from '../types';
 
 const props = defineProps<{
   files: JobFile[];
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'preview', file: JobFile): void
 }>();
+
+const glossaryFile = ref<JobFile | null>(null);
 
 const sourceFiles = computed(() => {
     return props.files.filter(f => f.type === 'source' || f.type === 'original');
 });
 
 const resultFiles = computed(() => {
-    return props.files.filter(f => ['mono', 'dual', 'result'].includes(f.type) || (f.type !== 'source' && f.type !== 'original'));
+    // Include glossary in results
+    return props.files.filter(f => ['mono', 'dual', 'result', 'glossary'].includes(f.type) || (f.type !== 'source' && f.type !== 'original'));
 });
+
+const openPreview = (file: JobFile) => {
+  if (file.type === 'glossary') {
+    glossaryFile.value = file;
+  } else {
+    emit('preview', file);
+  }
+};
 
 const formatSize = (bytes: number) => {
   if (bytes === 0) return '0 B';
