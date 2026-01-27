@@ -159,6 +159,8 @@
 
 说明：
 - `running` / `queued` 仅包含任务 ID
+- `queued` 包含所有 `status=queued` 的任务（按创建时间入队），但不会自动执行
+- 需要调用 `POST /api/jobs/{id}/run` 或 `POST /api/queue/resume` 才会开始执行
 - `max_running` 为并发上限
 
 ### 2.4 恢复队列（/api/queue/resume）

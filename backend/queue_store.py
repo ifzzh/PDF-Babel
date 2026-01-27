@@ -28,6 +28,29 @@ def enqueue_job(settings: Settings, job_id: str) -> None:
         conn.close()
 
 
+def sync_queued_jobs(settings: Settings) -> None:
+    conn = sqlite3.connect(settings.db_path)
+    try:
+        conn.execute(
+            "DELETE FROM job_queue WHERE job_id NOT IN (SELECT id FROM jobs WHERE status='queued')"
+        )
+        rows = conn.execute(
+            "SELECT id, created_at FROM jobs WHERE status='queued' ORDER BY created_at"
+        ).fetchall()
+        for job_id, created_at in rows:
+            conn.execute(
+                """
+                INSERT INTO job_queue (job_id, status, enqueued_at, updated_at)
+                VALUES (?, 'queued', ?, ?)
+                ON CONFLICT(job_id) DO NOTHING
+                """,
+                (job_id, created_at, created_at),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
 def mark_running(settings: Settings, job_id: str) -> None:
     now = _now_iso()
     conn = sqlite3.connect(settings.db_path)

@@ -209,6 +209,7 @@ async def create_job_endpoint(
         options_obj,
         source_obj,
     )
+    queue_store.enqueue_job(app.state.settings, record.id)
     return {
         "job_id": record.id,
         "status": record.status,
@@ -690,6 +691,7 @@ def _startup():
     app.state.storage = ensure_storage(app.state.settings)
     init_db(app.state.settings.db_path)
     queue_store.reset_running_to_queued(app.state.settings)
+    queue_store.sync_queued_jobs(app.state.settings)
     snapshot = queue_store.snapshot(app.state.settings)
     SCHEDULER.configure(app.state.settings.max_running)
     SCHEDULER.load_queued(snapshot["queued"])

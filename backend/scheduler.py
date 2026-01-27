@@ -20,9 +20,8 @@ class JobScheduler:
         with self._lock:
             if job_id in self._running:
                 return "running"
-            if job_id in self._queue:
-                return "queued"
-            self._queue.append(job_id)
+            if job_id not in self._queue:
+                self._queue.append(job_id)
         queue_store.enqueue_job(settings, job_id)
         self._try_dispatch(settings, storage)
         with self._lock:
