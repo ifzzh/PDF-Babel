@@ -19,16 +19,14 @@
          <!-- Step 2: Source -->
          <section class="bg-white rounded-lg shadow p-6 relative">
             <h2 class="text-lg font-medium text-gray-900 mb-4">2. Translation Source</h2>
-            <!-- Overlay if no file selected -->
-            <div v-if="!file" class="absolute inset-0 bg-white/60 z-10 cursor-not-allowed"></div>
+
             <SourceSelector @update:source="handleSourceUpdate" />
          </section>
 
          <!-- Step 3: Options -->
          <section class="bg-white rounded-lg shadow p-6 relative">
             <h2 class="text-lg font-medium text-gray-900 mb-4">3. Options</h2>
-             <!-- Overlay if no source selected -->
-            <div v-if="!file" class="absolute inset-0 bg-white/60 z-10 cursor-not-allowed"></div>
+
             <OptionsForm @update:options="handleOptionsUpdate" />
          </section>
          

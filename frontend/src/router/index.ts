@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import HomeView from '../views/HomeView.vue';
 import HistoryView from '../views/HistoryView.vue';
+import QueueView from '../views/QueueView.vue';
+import TaskDetailView from '../views/TaskDetailView.vue';
 
 const router = createRouter({
     history: createWebHistory(),
@@ -14,6 +16,17 @@ const router = createRouter({
             path: '/history',
             name: 'history',
             component: HistoryView
+        },
+        {
+            path: '/queue',
+            name: 'queue',
+            component: QueueView
+        },
+        {
+            path: '/history/:id',
+            name: 'task-detail',
+            component: TaskDetailView,
+            props: true
         }
     ]
 });

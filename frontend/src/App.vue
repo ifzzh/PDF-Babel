@@ -8,12 +8,44 @@
            </svg>
            <span class="font-bold text-xl tracking-tight">PDF Babel</span>
         </router-link>
-        <div class="text-xs text-gray-500">v0.1</div>
+        
+        <div class="flex items-center space-x-6">
+           <nav class="flex items-center space-x-4">
+              <router-link 
+                to="/" 
+                class="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+                active-class="text-blue-600 font-semibold"
+              >
+                Translator
+              </router-link>
+              <router-link 
+                to="/history" 
+                class="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+                active-class="text-blue-600 font-semibold"
+              >
+                History
+              </router-link>
+              <router-link 
+                to="/queue" 
+                class="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+                active-class="text-blue-600 font-semibold"
+              >
+                Queue
+              </router-link>
+           </nav>
+           <div class="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded">v0.1</div>
+        </div>
       </div>
     </header>
     
     <main>
       <router-view></router-view>
     </main>
+
+    <QueueRail />
   </div>
 </template>
+
+<script setup lang="ts">
+import QueueRail from './components/QueueRail.vue';
+</script>

@@ -72,7 +72,12 @@
            
            <div class="flex-1">
               <div class="flex items-center space-x-2">
-                <span class="font-medium text-lg text-gray-800">{{ stripExtension(job.display_name || job.original_filename || job.folder_name || 'Untitled') }}</span>
+                <router-link 
+                    :to="'/history/' + job.job_id"
+                    class="font-medium text-lg text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
+                 >
+                    {{ stripExtension(job.display_name || job.original_filename || job.folder_name || 'Untitled') }}
+                 </router-link>
                 <span v-if="job.original_filename && job.folder_name !== job.original_filename" class="text-xs text-gray-400">({{ job.folder_name }})</span>
                 <span 
                   class="px-2 py-0.5 rounded text-xs font-medium capitalize"

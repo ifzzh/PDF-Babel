@@ -12,22 +12,29 @@
       </button>
     </div>
 
-    <!-- Platform List -->
+    <!-- Platform Dropdown -->
     <div v-if="selectedMode === 'platform'" class="space-y-2">
-      <div v-for="channel in availableChannels.platform" :key="channel.id">
-         <div 
-           class="flex items-center justify-between p-3 border rounded-lg"
-           :class="channel.enabled ? 'border-gray-300 hover:border-blue-400 cursor-pointer' : 'bg-gray-100 border-gray-200 cursor-not-allowed opacity-60'"
-           @click="channel.enabled && selectPlatform(channel.id)"
-         >
-           <div class="flex items-center space-x-2">
-             <span class="font-medium">{{ channel.label }}</span>
-             <span v-if="selectedChannelId === channel.id && selectedMode === 'platform'" class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded">Selected</span>
-           </div>
-           <span v-if="!channel.enabled" class="text-xs text-red-500">{{ channel.disabled_reason }}</span>
-         </div>
-      </div>
-      <div v-if="availableChannels.platform.length === 0" class="text-sm text-gray-500">No platform channels available.</div>
+      <select 
+         v-if="availableChannels.platform.length > 0"
+         v-model="selectedChannelId"
+         @change="selectPlatform(selectedChannelId)"
+         class="w-full border rounded-md px-3 py-2 bg-white focus:ring-blue-500 focus:border-blue-500"
+      >
+        <option value="" disabled>Select a platform</option>
+        <option 
+           v-for="channel in availableChannels.platform" 
+           :key="channel.id" 
+           :value="channel.id"
+           :disabled="!channel.enabled"
+        >
+           {{ channel.label }} {{ !channel.enabled ? `(${channel.disabled_reason || 'disabled'})` : '' }}
+        </option>
+      </select>
+      <div v-else class="text-sm text-gray-500">No platform channels available.</div>
+      
+      <p v-if="selectedChannelId" class="text-xs text-green-600 mt-1">
+         Selected: {{ availableChannels.platform.find(c => c.id === selectedChannelId)?.label }}
+      </p>
     </div>
 
     <!-- Custom List -->
@@ -90,6 +97,12 @@ onMounted(async () => {
   try {
     const res = await fetchChannels();
     availableChannels.value = res.data;
+    
+    // Auto-select first enabled platform channel
+    const firstEnabled = availableChannels.value.platform.find(c => c.enabled);
+    if (firstEnabled) {
+      selectPlatform(firstEnabled.id);
+    }
   } catch (e) {
     console.error('Failed to load channels', e);
   }

@@ -5,36 +5,21 @@
           <router-link to="/" class="p-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors">
             <ArrowLeft class="w-6 h-6" />
           </router-link>
-          <h1 class="text-2xl font-bold text-gray-900">Task History & Queue</h1>
+          <h1 class="text-2xl font-bold text-gray-900">Task History</h1>
        </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-       <!-- Queue Manager -->
-       <div class="lg:col-span-1">
-          <section class="bg-white rounded-lg shadow lg:sticky lg:top-8">
-             <div class="border-b p-4">
-               <h2 class="font-medium text-lg">Active Queue</h2>
-               <p class="text-xs text-gray-500 mt-1">Manage running and queued tasks</p>
-             </div>
-             <div class="p-4">
-                <QueuePanel @refresh="refreshHistory" />
-             </div>
-          </section>
-       </div>
-       
+    <div class="space-y-8">
        <!-- History List -->
-       <div class="lg:col-span-2">
-          <section class="bg-white rounded-lg shadow">
-             <div class="border-b p-4 flex justify-between items-center">
-               <h2 class="font-medium text-lg">Task History</h2>
-               <button @click="refreshHistory" class="text-sm text-blue-600 hover:text-blue-700">Refresh</button>
-             </div>
-             <div class="p-4">
-               <HistoryList ref="historyRef" @select="viewDetails" />
-             </div>
-          </section>
-       </div>
+       <section class="bg-white rounded-lg shadow">
+          <div class="border-b p-4 flex justify-between items-center">
+            <h2 class="font-medium text-lg">Task History</h2>
+            <button @click="refreshHistory" class="text-sm text-blue-600 hover:text-blue-700">Refresh</button>
+          </div>
+          <div class="p-4">
+            <HistoryList ref="historyRef" @select="viewDetails" />
+          </div>
+       </section>
     </div>
 
     <!-- Detail Modal (Reuse ResultList + Preview?) -->
@@ -59,6 +44,7 @@
     <PdfPreview 
        :isOpen="!!previewFile" 
        :file="previewFile" 
+       :jobId="selectedJobId"
        @close="previewFile = null" 
     />
 
@@ -68,7 +54,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { ArrowLeft, X } from 'lucide-vue-next';
-import QueuePanel from '../components/QueuePanel.vue';
 import HistoryList from '../components/HistoryList.vue';
 import ResultList from '../components/ResultList.vue';
 import PdfPreview from '../components/PdfPreview.vue';
