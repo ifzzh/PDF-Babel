@@ -1,0 +1,35 @@
+FROM python:3.12-slim
+
+# System deps (runtime libs for opencv/onnx/etc.)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        libgl1 \
+        libglib2.0-0 \
+        libgomp1 \
+        libstdc++6 \
+        libspatialindex6 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Python deps
+COPY pyproject.toml uv.lock ./
+
+RUN pip install --no-cache-dir -U pip \
+    && pip install --no-cache-dir uv \
+    && uv export --frozen --no-dev -o /tmp/requirements.txt \
+    && pip install --no-cache-dir -r /tmp/requirements.txt \
+    && rm -f /tmp/requirements.txt
+
+COPY backend ./backend
+COPY babeldoc ./babeldoc
+
+ENV BABELDOC_DATA_ROOT=/data \
+    BABELDOC_PLATFORM_CONFIG=/data/config/platform.json \
+    BABELDOC_LOG_LEVEL=INFO \
+    BABELDOC_TIMEZONE=Asia/Shanghai
+
+EXPOSE 8000
+
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]

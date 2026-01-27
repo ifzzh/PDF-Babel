@@ -1,0 +1,25 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: ifzzh520/pdf-babel-backend:latest
+    environment:
+      - BABELDOC_DATA_ROOT=/data
+      - BABELDOC_PLATFORM_CONFIG=/data/config/platform.json
+      - BABELDOC_LOG_LEVEL=INFO
+      - BABELDOC_TIMEZONE=Asia/Shanghai
+    volumes:
+      - /mnt/raid1/babeldoc-data:/data
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    image: ifzzh520/pdf-babel-frontend:latest
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
