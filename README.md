@@ -118,6 +118,30 @@ uv run babeldoc --files example.pdf --files example2.pdf --openai --openai-model
 
 ## Advanced Options
 
+## Docker Images (Compose)
+
+项目提供前后端两个镜像仓库：
+
+- 后端：`ifzzh520/pdf-babel-backend`
+- 前端：`ifzzh520/pdf-babel-frontend`
+
+版本号分别维护：
+
+- `docker.version.backend`
+- `docker.version.frontend`
+
+发布顺序建议：**先后端，后前端**（确保 API 变更已先上线）。
+
+打包并推送：
+
+```bash
+# 显式指定版本
+./scripts/release-images.sh 0.4.2 0.3.9
+
+# 或直接使用本地版本文件
+./scripts/release-images.sh
+```
+
 > [!NOTE]
 > This CLI is mainly for debugging purposes. Although end users can use this CLI to translate files, we do not provide any technical support for this purpose.
 >
