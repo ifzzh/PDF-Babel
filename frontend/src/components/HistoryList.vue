@@ -70,27 +70,31 @@
              >
            </div>
            
-           <div class="flex-1">
-              <div class="flex items-center space-x-2">
-                <router-link 
-                    :to="'/history/' + job.job_id"
-                    class="font-medium text-lg text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
-                 >
-                    {{ stripExtension(job.display_name || job.original_filename || job.folder_name || 'Untitled') }}
-                 </router-link>
-                <span v-if="job.original_filename && job.folder_name !== job.original_filename" class="text-xs text-gray-400">({{ job.folder_name }})</span>
-                <span 
-                  class="px-2 py-0.5 rounded text-xs font-medium capitalize"
-                  :class="{
-                    'bg-yellow-100 text-yellow-700': job.status === 'queued',
-                    'bg-blue-100 text-blue-700': job.status === 'running',
-                    'bg-green-100 text-green-700': job.status === 'finished',
-                    'bg-red-100 text-red-700': job.status === 'failed',
-                    'bg-gray-100 text-gray-600': job.status === 'canceled'
-                  }"
-                >
-                  {{ job.status }}
-                </span>
+           <div class="flex-1 min-w-0">
+              <div class="flex flex-col min-w-0">
+                <div class="min-w-0">
+                  <router-link 
+                      :to="'/history/' + job.job_id"
+                      class="block font-medium text-lg text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer truncate"
+                      :title="stripExtension(job.display_name || job.original_filename || job.folder_name || 'Untitled')"
+                   >
+                      {{ stripExtension(job.display_name || job.original_filename || job.folder_name || 'Untitled') }}
+                   </router-link>
+                </div>
+                <div class="mt-1">
+                  <span 
+                    class="inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize"
+                    :class="{
+                      'bg-yellow-100 text-yellow-700': job.status === 'queued',
+                      'bg-blue-100 text-blue-700': job.status === 'running',
+                      'bg-green-100 text-green-700': job.status === 'finished',
+                      'bg-red-100 text-red-700': job.status === 'failed',
+                      'bg-gray-100 text-gray-600': job.status === 'canceled'
+                    }"
+                  >
+                    {{ job.status }}
+                  </span>
+                </div>
               </div>
               
               <div class="mt-1 text-sm text-gray-500 flex items-center space-x-4">
