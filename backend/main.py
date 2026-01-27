@@ -486,8 +486,9 @@ def list_jobs_endpoint(
                 "created_at": job.created_at,
                 "renamed_at": job.renamed_at,
                 "status": job.status,
-                "has_mono": flags.get(job.id, (False, False))[0],
-                "has_dual": flags.get(job.id, (False, False))[1],
+                "has_mono": flags.get(job.id, (False, False, False))[0],
+                "has_dual": flags.get(job.id, (False, False, False))[1],
+                "has_glossary": flags.get(job.id, (False, False, False))[2],
             }
             for job in items
         ],

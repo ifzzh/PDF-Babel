@@ -134,7 +134,8 @@ def get_file_flags(
     sql = (
         "SELECT job_id, "
         "MAX(CASE WHEN type = 'mono' THEN 1 ELSE 0 END) AS has_mono, "
-        "MAX(CASE WHEN type = 'dual' THEN 1 ELSE 0 END) AS has_dual "
+        "MAX(CASE WHEN type = 'dual' THEN 1 ELSE 0 END) AS has_dual, "
+        "MAX(CASE WHEN type = 'glossary' THEN 1 ELSE 0 END) AS has_glossary "
         f"FROM files WHERE job_id IN ({placeholders}) GROUP BY job_id"
     )
     conn = sqlite3.connect(settings.db_path)
@@ -142,4 +143,6 @@ def get_file_flags(
         rows = conn.execute(sql, job_ids).fetchall()
     finally:
         conn.close()
-    return {row[0]: (bool(row[1]), bool(row[2])) for row in rows}
+    return {
+        row[0]: (bool(row[1]), bool(row[2]), bool(row[3])) for row in rows
+    }

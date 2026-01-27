@@ -132,7 +132,8 @@
       "renamed_at": null,
       "status": "finished",
       "has_mono": true,
-      "has_dual": true
+      "has_dual": true,
+      "has_glossary": true
     }
   ],
   "total": 1
