@@ -36,16 +36,14 @@
       <div 
         v-for="job in jobs" 
         :key="job.job_id"
-        class="flex items-center justify-between p-3 border rounded hover:bg-gray-50 transition-colors"
+        @click="toggleSelection(job.job_id, job.status)"
+        class="flex items-center justify-between p-3 border rounded transition-colors"
+        :class="[
+          selectedIds.includes(job.job_id) ? 'bg-blue-100 border-blue-300' : 'hover:bg-gray-50 border-gray-200',
+          job.status === 'running' ? 'cursor-default opacity-75' : 'cursor-pointer'
+        ]"
       >
         <div class="flex items-center gap-3 overflow-hidden">
-          <input 
-            type="checkbox" 
-            :value="job.job_id"
-            v-model="selectedIds"
-            :disabled="job.status === 'running'"
-            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-          >
           <div class="min-w-0">
              <div class="flex items-center gap-2">
                 <span 
@@ -91,6 +89,16 @@ const formatTime = (ts: string) => {
   } catch {
     return ts;
   }
+};
+
+const toggleSelection = (id: string, status: string) => {
+    if (status === 'running') return;
+    const idx = selectedIds.value.indexOf(id);
+    if (idx > -1) {
+        selectedIds.value.splice(idx, 1);
+    } else {
+        selectedIds.value.push(id);
+    }
 };
 
 const loadQueue = async () => {
