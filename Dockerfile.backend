@@ -8,7 +8,12 @@ RUN apt-get update \
         libglib2.0-0 \
         libgomp1 \
         libstdc++6 \
-        libspatialindex6 \
+    && rm -rf /var/lib/apt/lists/*
+
+# libspatialindex package name differs across Debian releases
+RUN apt-get update \
+    && (apt-get install -y --no-install-recommends libspatialindex6 \
+        || apt-get install -y --no-install-recommends libspatialindex5) \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
