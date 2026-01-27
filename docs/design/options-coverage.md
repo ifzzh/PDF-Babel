@@ -70,8 +70,8 @@
 | 能力（options key） | Babeldoc | 后端 | 前端 |
 |---|---|---|---|
 | `custom_system_prompt` | ✓ | ✓ | ✓ |
-| `auto_extract_glossary` | ✓ | — | ✓ |
-| `save_auto_extracted_glossary` | ✓ | — | — |
+| `auto_extract_glossary` | ✓ | ✓ | ✓ |
+| `save_auto_extracted_glossary` | ✓ | ✓ | — |
 
 ## 公式与字体
 

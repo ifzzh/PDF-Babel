@@ -208,6 +208,12 @@ def _prepare_config(
     auto_enable_ocr_workaround = _bool_value(
         options.get("auto_enable_ocr_workaround"), False
     )
+    auto_extract_glossary = _bool_value(
+        options.get("auto_extract_glossary"), True
+    )
+    save_auto_extracted_glossary = _bool_value(
+        options.get("save_auto_extracted_glossary"), False
+    )
     custom_system_prompt = options.get("custom_system_prompt")
     add_formula_placehold_hint = _bool_value(
         options.get("add_formula_placehold_hint"), False
@@ -267,6 +273,8 @@ def _prepare_config(
         skip_scanned_detection=skip_scanned_detection,
         ocr_workaround=ocr_workaround,
         auto_enable_ocr_workaround=auto_enable_ocr_workaround,
+        auto_extract_glossary=auto_extract_glossary,
+        save_auto_extracted_glossary=save_auto_extracted_glossary,
         custom_system_prompt=custom_system_prompt,
         add_formula_placehold_hint=add_formula_placehold_hint,
         split_strategy=split_strategy,
@@ -414,6 +422,21 @@ def run_translation_job(
                 watermark=watermark_label,
                 filename="dual.pdf",
                 path=dual_target,
+            )
+        )
+
+    glossary_target = _move_result(
+        result.auto_extracted_glossary_path, job_dir / "glossary.csv"
+    )
+    if glossary_target:
+        files_created.append(
+            create_file_record(
+                settings,
+                job_id=record.id,
+                file_type="glossary",
+                watermark="none",
+                filename="glossary.csv",
+                path=glossary_target,
             )
         )
 

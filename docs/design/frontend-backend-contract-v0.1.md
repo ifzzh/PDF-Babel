@@ -287,6 +287,7 @@
   "ocr_workaround": false,
   "auto_enable_ocr_workaround": false,
   "auto_extract_glossary": true,
+  "save_auto_extracted_glossary": false,
   "custom_system_prompt": "",
   "add_formula_placehold_hint": false,
   "pool_max_workers": 4,
@@ -379,6 +380,7 @@
 说明：
 - 原文件保留原始文件名（如 `Kua.pdf`）  
 - mono/dual 输出文件命名为 `mono.pdf` / `dual.pdf`
+- glossary 输出文件命名为 `glossary.csv`（当自动术语抽取有结果且 `save_auto_extracted_glossary=true` 时生成）
 
 ## 6. 预览/下载
 

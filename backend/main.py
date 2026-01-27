@@ -129,6 +129,8 @@ def _validate_options(options: dict) -> dict:
         "skip_scanned_detection",
         "ocr_workaround",
         "auto_enable_ocr_workaround",
+        "auto_extract_glossary",
+        "save_auto_extracted_glossary",
         "add_formula_placehold_hint",
         "disable_same_text_fallback",
         "only_include_translated_page",
