@@ -29,8 +29,8 @@
 
 | 能力（options key） | 说明 | 默认值 | Babeldoc | 后端 | 前端 |
 |---|---|---|---|---|---|
-| `qps` | 翻译服务 QPS 限制（速率） | `4` | ✓ | ✓ | — |
-| `max_pages_per_part` | 分片翻译时每片最大页数（不设则不分片） | 不分片（空/不传） | ✓ | ✓ | — |
+| `qps` | 翻译服务 QPS 限制（速率） | `4` | ✓ | ✓ | ✓ |
+| `max_pages_per_part` | 分片翻译时每片最大页数（不设则不分片） | 不分片（空/不传） | ✓ | ✓ | ✓ |
 | `pool_max_workers` | 内部任务池最大线程数（默认随 QPS） | 自动（跟随 `qps`） | ✓ | ✓ | ✓ |
 | `term_pool_max_workers` | 术语抽取线程池最大线程数（默认随 pool_max_workers） | 自动（跟随 `pool_max_workers`） | ✓ | ✓ | ✓ |
 | `report_interval` | 进度回报间隔（秒） | `0.1` | ✓ | — | — |
@@ -86,5 +86,5 @@
 ## 备注
 
 - 前端已发送但未开放配置：`pool_max_workers`、`term_pool_max_workers`
-- 后端支持但前端未露出：`qps`、`disable_rich_text_translate`、`add_formula_placehold_hint`、`disable_same_text_fallback`、`primary_font_family`、`max_pages_per_part`、`skip_translation`、`only_parse_generate_pdf`
+- 后端支持但前端未露出：`disable_rich_text_translate`、`add_formula_placehold_hint`、`disable_same_text_fallback`、`primary_font_family`、`skip_translation`、`only_parse_generate_pdf`
 - babeldoc 支持但后端未接入：见“版式/兼容与渲染”与“公式与字体”中标记为 `—` 的条目
