@@ -18,11 +18,11 @@
 
 | 能力（options key） | 说明 | 默认值 | Babeldoc | 后端 | 前端 |
 |---|---|---|---|---|---|
-| `no_dual` | 不输出双语 PDF | `false` | ✓ | ✓ | — |
-| `no_mono` | 不输出单语 PDF | `false` | ✓ | ✓ | — |
+| `no_dual` | 不输出双语 PDF | `false` | ✓ | ✓ | ✓ |
+| `no_mono` | 不输出单语 PDF | `false` | ✓ | ✓ | ✓ |
 | `use_alternating_pages_dual` | 双语 PDF 使用“原文/译文交替页”模式 | `false` | ✓ | — | — |
-| `watermark_output_mode` | 水印输出模式：`watermarked` / `no_watermark` / `both` | `no_watermark` | ✓ | ✓ | — |
-| `only_include_translated_page` | 仅输出翻译页（仅在指定 `pages` 时生效） | `false` | ✓ | ✓ | — |
+| `watermark_output_mode` | 水印输出模式：`watermarked` / `no_watermark` / `both` | `no_watermark` | ✓ | ✓ | ✓ |
+| `only_include_translated_page` | 仅输出翻译页（仅在指定 `pages` 时生效） | `false` | ✓ | ✓ | ✓ |
 | `dual_translate_first` | 双语模式下译文页在前 | `false` | ✓ | — | — |
 
 ## 性能与分片
@@ -86,5 +86,5 @@
 ## 备注
 
 - 前端已发送但未开放配置：`pool_max_workers`、`term_pool_max_workers`
-- 后端支持但前端未露出：`qps`、`no_dual`、`no_mono`、`disable_rich_text_translate`、`add_formula_placehold_hint`、`disable_same_text_fallback`、`primary_font_family`、`only_include_translated_page`、`watermark_output_mode`、`max_pages_per_part`、`save_auto_extracted_glossary`
+- 后端支持但前端未露出：`qps`、`disable_rich_text_translate`、`add_formula_placehold_hint`、`disable_same_text_fallback`、`primary_font_family`、`max_pages_per_part`、`save_auto_extracted_glossary`
 - babeldoc 支持但后端未接入：见“版式/兼容与渲染”与“公式与字体”中标记为 `—` 的条目
