@@ -88,12 +88,10 @@ import OptionsForm from '../components/OptionsForm.vue';
 import SourceSelector from '../components/SourceSelector.vue';
 import WorkspacePanel from '../components/WorkspacePanel.vue';
 import { useJob } from '../composables/useJob';
-import type { JobFile } from '../types';
 
 const file = ref<File | null>(null);
 const options = ref<any>({});
 const source = ref<any>(null);
-const previewFile = ref<JobFile | null>(null);
 
 const { job, files, startJob, cancel } = useJob();
 
@@ -147,7 +145,4 @@ const submitJob = () => {
   }
 };
 
-const openPreview = (f: JobFile) => {
-  previewFile.value = f;
-};
 </script>

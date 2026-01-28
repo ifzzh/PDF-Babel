@@ -96,8 +96,6 @@ const props = withDefaults(defineProps<{
 });
 
 const radius = computed(() => (props.size - props.strokeWidth) / 2);
-const circumference = computed(() => 2 * Math.PI * radius.value);
-
 // Helper to format stage names for display
 const formatStageName = (name: string) => {
     // Basic cleanup: CamelCase to Space

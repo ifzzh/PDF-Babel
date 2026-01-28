@@ -41,9 +41,9 @@
               :class="isActive('result', file.file_id) ? 'bg-purple-100 text-purple-700' : 'hover:bg-gray-100 text-gray-700'"
             >
               <div class="flex items-center gap-2">
-                <span class="p-1.5 rounded-md bg-white border border-gray-200" :class="file.file_type === 'glossary' ? 'text-orange-500' : 'text-purple-500'">
+                <span class="p-1.5 rounded-md bg-white border border-gray-200" :class="file.type === 'glossary' ? 'text-orange-500' : 'text-purple-500'">
                   <!-- Icon based on type -->
-                  <svg v-if="file.file_type === 'glossary'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg v-if="file.type === 'glossary'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
                   <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
