@@ -52,3 +52,5 @@ AGENTS.md
 # local logs
 baocuo.log
 .agent
+
+data/
