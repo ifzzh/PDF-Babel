@@ -2,12 +2,18 @@
   <div class="space-y-6">
     <div class="grid grid-cols-2 gap-4">
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Source Language</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+          Source Language
+          <InfoTooltip :text="OPTIONS_META.lang_in.desc" />
+        </label>
         <input v-model="form.lang_in" type="text" class="w-full border rounded-md px-3 py-2 bg-gray-50 text-gray-500" readonly />
         <p class="text-xs text-gray-400 mt-1">Auto-detected (or locked to 'en' for MVP)</p>
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Target Language</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+          Target Language
+          <InfoTooltip :text="OPTIONS_META.lang_out.desc" />
+        </label>
         <select v-model="form.lang_out" class="w-full border rounded-md px-3 py-2">
           <option value="zh">Chinese (zh)</option>
           <option value="en">English (en)</option>
@@ -17,7 +23,10 @@
     </div>
 
     <div>
-      <label class="block text-sm font-medium text-gray-700 mb-1">Pages (Optional)</label>
+      <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+        Pages (Optional)
+        <InfoTooltip :text="OPTIONS_META.pages.desc" />
+      </label>
       <input 
         v-model="form.pages" 
         type="text" 
@@ -26,45 +35,137 @@
       >
     </div>
 
+    <!-- Output & Watermark -->
+    <div>
+      <h3 class="text-sm font-medium text-gray-700 mb-2">Output & Watermark</h3>
+      <div class="border rounded-md p-4 bg-gray-50 space-y-4">
+          <!-- PDF Types -->
+          <div>
+              <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">PDF Types</h4>
+              <div class="flex flex-wrap gap-3">
+                  <BasePillOption 
+                      v-model="form.no_dual" 
+                      label="No Dual PDF" 
+                      :desc="OPTIONS_META.no_dual.desc" 
+                  />
+                  <BasePillOption 
+                      v-model="form.no_mono" 
+                      label="No Mono PDF" 
+                      :desc="OPTIONS_META.no_mono.desc" 
+                  />
+                  <BasePillOption 
+                      v-model="form.only_include_translated_page" 
+                      label="Only Translated Pages" 
+                      :desc="OPTIONS_META.only_include_translated_page.desc" 
+                  />
+              </div>
+          </div>
+
+          <!-- Separator -->
+          <div class="border-t border-gray-200"></div>
+
+          <!-- Watermark -->
+          <div>
+              <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                   Watermark
+                   <InfoTooltip :text="OPTIONS_META.watermark_output_mode.desc" />
+              </h4>
+              <div class="flex flex-wrap gap-3">
+                  <BasePillRadio 
+                      v-model="form.watermark_output_mode" 
+                      value="no_watermark" 
+                      label="No Watermark" 
+                  />
+                  <BasePillRadio 
+                      v-model="form.watermark_output_mode" 
+                      value="watermarked" 
+                      label="Watermarked" 
+                  />
+              </div>
+          </div>
+      </div>
+    </div>
+
     <div>
       <h3 class="text-sm font-medium text-gray-700 mb-2">Advanced Options</h3>
-      <div class="space-y-2 border rounded-md p-4 bg-gray-50">
-        <div class="flex items-center justify-between">
-            <span class="text-sm">Skip Clean</span>
-            <input type="checkbox" v-model="form.skip_clean">
-        </div>
-        <div class="flex items-center justify-between">
-            <span class="text-sm">Enhance Compatibility</span>
-            <input type="checkbox" v-model="form.enhance_compatibility">
-        </div>
-        <div class="flex items-center justify-between">
-            <span class="text-sm">Split Short Lines</span>
-            <input type="checkbox" v-model="form.split_short_lines">
-        </div>
-        <div class="flex items-center justify-between">
-            <span class="text-sm">Short Line Split Factor</span>
-             <input type="number" step="0.1" v-model.number="form.short_line_split_factor" class="w-20 border rounded px-1 text-right">
-        </div>
-        <div class="flex items-center justify-between">
-            <span class="text-sm">Skip Scanned Detection</span>
-            <input type="checkbox" v-model="form.skip_scanned_detection">
-        </div>
-         <div class="flex items-center justify-between">
-            <span class="text-sm">OCR Workaround</span>
-            <input type="checkbox" v-model="form.ocr_workaround">
-        </div>
-         <div class="flex items-center justify-between">
-            <span class="text-sm">Auto Enable OCR Workaround</span>
-            <input type="checkbox" v-model="form.auto_enable_ocr_workaround">
-        </div>
-         <div class="flex items-center justify-between">
-            <span class="text-sm">Auto Extract Glossary</span>
-            <input type="checkbox" v-model="form.auto_extract_glossary">
-        </div>
+      <div class="border rounded-md p-4 bg-gray-50 space-y-4">
         
-        <div class="pt-2 border-t">
-           <label class="block text-xs font-medium text-gray-600 mb-1">Custom System Prompt</label>
-           <textarea v-model="form.custom_system_prompt" class="w-full text-xs border rounded p-2" rows="2"></textarea>
+        <!-- Pre-processing -->
+        <div>
+            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Pre-processing</h4>
+            <div class="flex flex-wrap gap-3">
+                <BasePillOption 
+                  v-model="form.skip_clean" 
+                  label="Skip Clean" 
+                  :desc="OPTIONS_META.skip_clean.desc" 
+                />
+                <BasePillOption 
+                  v-model="form.enhance_compatibility" 
+                  label="Enhance Compatibility" 
+                  :desc="OPTIONS_META.enhance_compatibility.desc" 
+                />
+                 <BasePillOption 
+                  v-model="form.skip_scanned_detection" 
+                  label="Skip Scanned Detection" 
+                  :desc="OPTIONS_META.skip_scanned_detection.desc" 
+                />
+            </div>
+        </div>
+
+        <!-- Separator -->
+        <div class="border-t border-gray-200"></div>
+
+        <!-- Layout & OCR -->
+        <div>
+            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Layout & OCR</h4>
+            <div class="flex flex-wrap gap-3 items-center">
+                 <BasePillOption 
+                  v-model="form.split_short_lines" 
+                  label="Split Short Lines" 
+                  :desc="OPTIONS_META.split_short_lines.desc" 
+                />
+                 <BasePillOption 
+                  v-model="form.ocr_workaround" 
+                  label="OCR Workaround" 
+                  :desc="OPTIONS_META.ocr_workaround.desc" 
+                />
+                 <BasePillOption 
+                  v-model="form.auto_enable_ocr_workaround" 
+                  label="Auto Enable OCR" 
+                  :desc="OPTIONS_META.auto_enable_ocr_workaround.desc" 
+                />
+                
+                <!-- Short Line Param integrated here or next line -->
+                <div class="flex items-center gap-2 ml-2 pl-2 border-l border-gray-200">
+                    <span class="text-xs text-gray-500 font-medium">Split Factor</span>
+                    <InfoTooltip :text="OPTIONS_META.short_line_split_factor.desc" />
+                    <input type="number" step="0.1" v-model.number="form.short_line_split_factor" class="w-16 border rounded px-1 py-0.5 text-right text-xs">
+                </div>
+            </div>
+        </div>
+
+        <!-- Separator -->
+        <div class="border-t border-gray-200"></div>
+
+        <!-- Extraction -->
+        <div>
+             <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Content</h4>
+             <div class="flex flex-wrap gap-3">
+                 <BasePillOption 
+                  v-model="form.auto_extract_glossary" 
+                  label="Auto Extract Glossary" 
+                  :desc="OPTIONS_META.auto_extract_glossary.desc" 
+                />
+             </div>
+        </div>
+
+        <!-- Prompt -->
+        <div class="pt-2 border-t border-gray-200">
+           <label class="block text-xs font-medium text-gray-600 mb-1 flex items-center gap-1">
+             Custom System Prompt
+             <InfoTooltip :text="OPTIONS_META.custom_system_prompt.desc" />
+           </label>
+           <textarea v-model="form.custom_system_prompt" class="w-full text-xs border rounded p-2" rows="2" placeholder="Start with..."></textarea>
         </div>
       </div>
     </div>
@@ -73,13 +174,47 @@
 
 <script setup lang="ts">
 import { reactive, watch } from 'vue';
+import InfoTooltip from './InfoTooltip.vue';
+import BasePillOption from './BasePillOption.vue';
+import BasePillRadio from './BasePillRadio.vue';
 
 const emit = defineEmits(['update:options']);
+
+// Descriptions from docs/design/options-coverage.md
+const OPTIONS_META = {
+    lang_in: { desc: "源语言代码（如 en）", default: "en" },
+    lang_out: { desc: "目标语言代码（如 zh）", default: "zh" },
+    pages: { desc: "指定翻译页码范围，格式如 1,2,1-,-3,3-5", default: "" },
+    
+    // Output & Watermark
+    no_dual: { desc: "不输出双语 PDF", default: false },
+    no_mono: { desc: "不输出单语 PDF", default: false },
+    watermark_output_mode: { desc: "水印输出模式：watermarked / no_watermark / both", default: "no_watermark" },
+    only_include_translated_page: { desc: "仅输出翻译页（仅在指定 pages 时生效）", default: false },
+
+    // Advanced
+    skip_clean: { desc: "跳过 PDF 清理步骤", default: false },
+    enhance_compatibility: { desc: "兼容性增强（等同 skip_clean + dual_translate_first + disable_rich_text_translate）", default: false },
+    split_short_lines: { desc: "强制拆分短行（可能影响排版/稳定性）", default: false },
+    short_line_split_factor: { desc: "短行拆分阈值系数（页内行长中位数 × 系数）", default: 0.8 },
+    skip_scanned_detection: { desc: "跳过扫描检测（非扫描文档更快）", default: false },
+    ocr_workaround: { desc: "OCR workaround（实验性，给文本加背景）", default: false },
+    auto_enable_ocr_workaround: { desc: "自动启用 OCR workaround（重扫描文档）", default: false },
+    auto_extract_glossary: { desc: "自动抽取术语", default: true },
+    custom_system_prompt: { desc: "自定义系统提示词", default: "" },
+};
 
 const form = reactive({
   lang_in: 'en',
   lang_out: 'zh',
   pages: '',
+  
+  // Output & Watermark
+  no_dual: false,
+  no_mono: false,
+  watermark_output_mode: 'no_watermark',
+  only_include_translated_page: false,
+
   // Advanced defaults
   skip_clean: false,
   enhance_compatibility: false,
@@ -92,6 +227,14 @@ const form = reactive({
   custom_system_prompt: '',
   pool_max_workers: 8,
   term_pool_max_workers: 4
+});
+
+// Mutual exclusion for no_dual / no_mono
+watch(() => form.no_dual, (val) => {
+    if (val) form.no_mono = false;
+});
+watch(() => form.no_mono, (val) => {
+    if (val) form.no_dual = false;
 });
 
 watch(form, (newVal) => {
