@@ -201,6 +201,38 @@
         <!-- Separator -->
         <div class="border-t border-gray-200"></div>
 
+        <!-- Typography & Formula -->
+        <div>
+            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Typography & Formula</h4>
+            <div class="space-y-3">
+                <!-- Primary Font Family -->
+                <div>
+                   <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                       Primary Font Family
+                       <InfoTooltip :text="OPTIONS_META.primary_font_family.desc" />
+                   </label>
+                   <select v-model="form.primary_font_family" class="w-full border rounded-md px-3 py-2 text-sm bg-white">
+                       <option :value="null">Auto (Default)</option>
+                       <option value="serif">Serif</option>
+                       <option value="sans-serif">Sans-serif</option>
+                       <option value="script">Script</option>
+                   </select>
+                </div>
+                
+                <!-- Formula Hint -->
+                <div class="flex flex-wrap gap-3">
+                    <BasePillOption 
+                      v-model="form.add_formula_placehold_hint" 
+                      label="Add Formula Hint" 
+                      :desc="OPTIONS_META.add_formula_placehold_hint.desc" 
+                    />
+                </div>
+            </div>
+        </div>
+
+        <!-- Separator -->
+        <div class="border-t border-gray-200"></div>
+
         <!-- Layout & OCR -->
         <div>
             <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Layout & OCR</h4>
@@ -289,6 +321,8 @@ const OPTIONS_META = {
     enhance_compatibility: { desc: "兼容性增强（等同 skip_clean + dual_translate_first + disable_rich_text_translate）", default: false },
     disable_rich_text_translate: { desc: "禁用富文本翻译（提高兼容性）", default: false },
     disable_same_text_fallback: { desc: "禁用“译文等于原文时回退”逻辑", default: false },
+    primary_font_family: { desc: "覆盖译文主字体族（serif / sans-serif / script）", default: null },
+    add_formula_placehold_hint: { desc: "添加公式占位提示（不推荐，可能影响质量）", default: false },
     split_short_lines: { desc: "强制拆分短行（可能影响排版/稳定性）", default: false },
     short_line_split_factor: { desc: "短行拆分阈值系数（页内行长中位数 × 系数）", default: 0.8 },
     skip_scanned_detection: { desc: "跳过扫描检测（非扫描文档更快）", default: false },
@@ -321,6 +355,8 @@ const form = reactive({
   enhance_compatibility: false,
   disable_rich_text_translate: false,
   disable_same_text_fallback: false,
+  primary_font_family: null,
+  add_formula_placehold_hint: false,
   split_short_lines: false,
   short_line_split_factor: 0.8,
   skip_scanned_detection: false,

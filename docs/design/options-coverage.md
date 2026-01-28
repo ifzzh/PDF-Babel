@@ -78,13 +78,13 @@
 
 | 能力（options key） | 说明 | 默认值 | Babeldoc | 后端 | 前端 |
 |---|---|---|---|---|---|
-| `add_formula_placehold_hint` | 添加公式占位提示（不推荐，可能影响质量） | `false` | ✓ | ✓ | — |
-| `primary_font_family` | 覆盖译文主字体族（`serif` / `sans-serif` / `script`） | 空（自动） | ✓ | ✓ | — |
+| `add_formula_placehold_hint` | 添加公式占位提示（不推荐，可能影响质量） | `false` | ✓ | ✓ | ✓ |
+| `primary_font_family` | 覆盖译文主字体族（`serif` / `sans-serif` / `script`） | 空（自动） | ✓ | ✓ | ✓ |
 | `formular_font_pattern` | 公式字体匹配模式 | 空（不传） | ✓ | — | — |
 | `formular_char_pattern` | 公式字符匹配模式 | 空（不传） | ✓ | — | — |
 
 ## 备注
 
 - 前端已发送但未开放配置：`pool_max_workers`、`term_pool_max_workers`
-- 后端支持但前端未露出：`add_formula_placehold_hint`、`primary_font_family`、`skip_translation`、`only_parse_generate_pdf`
+- 后端支持但前端未露出：`skip_translation`、`only_parse_generate_pdf`
 - babeldoc 支持但后端未接入：见“版式/兼容与渲染”与“公式与字体”中标记为 `—` 的条目
