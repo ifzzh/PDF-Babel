@@ -85,7 +85,7 @@ def _require_value(payload: dict[str, Any], key: str) -> Any:
 
 def _parse_watermark_mode(value: str | None) -> WatermarkOutputMode:
     if not value:
-        return WatermarkOutputMode.NoWatermark
+        return WatermarkOutputMode.Watermarked
     if value == WatermarkOutputMode.NoWatermark.value:
         return WatermarkOutputMode.NoWatermark
     if value == WatermarkOutputMode.Both.value:
@@ -189,7 +189,7 @@ def _prepare_config(
     translator: OpenAITranslator,
 ) -> TranslationConfig:
     pages = options.get("pages")
-    qps = _int_value(options.get("qps"), 1)
+    qps = _int_value(options.get("qps"), 4)
     no_dual = _bool_value(options.get("no_dual"), False)
     no_mono = _bool_value(options.get("no_mono"), False)
     split_short_lines = _bool_value(options.get("split_short_lines"), False)
