@@ -202,6 +202,23 @@ docker push ifzzh520/pdf-babel-frontend:latest
 
 前端对外端口在 `docker-compose.yml` 中配置（当前为 `53921:80`，可根据实际端口占用调整）。
 
+### 使用 Compose 更新
+
+1) 修改 `docker-compose.yml` 中的镜像版本号（例如 `1.1.1`）。
+2) 拉取最新镜像并重启（避免本地构建）：
+
+```bash
+docker compose pull
+docker compose up -d --no-build
+```
+
+如需完全重建容器：
+
+```bash
+docker compose down
+docker compose up -d --no-build
+```
+
 > [!NOTE]
 > This CLI is mainly for debugging purposes. Although end users can use this CLI to translate files, we do not provide any technical support for this purpose.
 >
