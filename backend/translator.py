@@ -221,6 +221,10 @@ def _prepare_config(
     disable_same_text_fallback = _bool_value(
         options.get("disable_same_text_fallback"), False
     )
+    skip_translation = _bool_value(options.get("skip_translation"), False)
+    only_parse_generate_pdf = _bool_value(
+        options.get("only_parse_generate_pdf"), False
+    )
     primary_font_family = options.get("primary_font_family")
     only_include_translated_page = _bool_value(
         options.get("only_include_translated_page"), False
@@ -277,6 +281,8 @@ def _prepare_config(
         save_auto_extracted_glossary=save_auto_extracted_glossary,
         custom_system_prompt=custom_system_prompt,
         add_formula_placehold_hint=add_formula_placehold_hint,
+        skip_translation=skip_translation,
+        only_parse_generate_pdf=only_parse_generate_pdf,
         split_strategy=split_strategy,
         pool_max_workers=pool_max_workers,
         term_pool_max_workers=term_pool_max_workers,

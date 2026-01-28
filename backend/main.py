@@ -134,6 +134,8 @@ def _validate_options(options: dict) -> dict:
         "add_formula_placehold_hint",
         "disable_same_text_fallback",
         "only_include_translated_page",
+        "skip_translation",
+        "only_parse_generate_pdf",
     )
     for field in bool_fields:
         if field in options:
