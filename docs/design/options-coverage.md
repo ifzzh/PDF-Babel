@@ -43,8 +43,8 @@
 | `short_line_split_factor` | 短行拆分阈值系数（页内行长中位数 × 系数） | `0.8` | ✓ | ✓ | ✓ |
 | `skip_clean` | 跳过 PDF 清理步骤 | `false` | ✓ | ✓ | ✓ |
 | `enhance_compatibility` | 兼容性增强（等同 `skip_clean` + `dual_translate_first` + `disable_rich_text_translate`） | `false` | ✓ | ✓ | ✓ |
-| `disable_rich_text_translate` | 禁用富文本翻译（提高兼容性） | `false` | ✓ | ✓ | — |
-| `disable_same_text_fallback` | 禁用“译文等于原文时回退”逻辑 | `false` | ✓ | ✓ | — |
+| `disable_rich_text_translate` | 禁用富文本翻译（提高兼容性） | `false` | ✓ | ✓ | ✓ |
+| `disable_same_text_fallback` | 禁用“译文等于原文时回退”逻辑 | `false` | ✓ | ✓ | ✓ |
 | `translate_table_text` | 翻译表格文字（实验性） | `false` | ✓ | — | — |
 | `show_char_box` | 显示字符框（调试） | `false` | ✓ | — | — |
 | `disable_graphic_element_process` | 禁用图形元素处理 | `false` | ✓ | — | — |
@@ -86,5 +86,5 @@
 ## 备注
 
 - 前端已发送但未开放配置：`pool_max_workers`、`term_pool_max_workers`
-- 后端支持但前端未露出：`disable_rich_text_translate`、`add_formula_placehold_hint`、`disable_same_text_fallback`、`primary_font_family`、`skip_translation`、`only_parse_generate_pdf`
+- 后端支持但前端未露出：`add_formula_placehold_hint`、`primary_font_family`、`skip_translation`、`only_parse_generate_pdf`
 - babeldoc 支持但后端未接入：见“版式/兼容与渲染”与“公式与字体”中标记为 `—` 的条目

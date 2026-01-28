@@ -181,6 +181,23 @@
             </div>
         </div>
 
+        <!-- Compatibility -->
+        <div>
+            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Compatibility</h4>
+            <div class="flex flex-wrap gap-3">
+                <BasePillOption 
+                  v-model="form.disable_rich_text_translate" 
+                  label="Disable Rich Text" 
+                  :desc="OPTIONS_META.disable_rich_text_translate.desc" 
+                />
+                <BasePillOption 
+                  v-model="form.disable_same_text_fallback" 
+                  label="Disable Fallback" 
+                  :desc="OPTIONS_META.disable_same_text_fallback.desc" 
+                />
+            </div>
+        </div>
+
         <!-- Separator -->
         <div class="border-t border-gray-200"></div>
 
@@ -270,6 +287,8 @@ const OPTIONS_META = {
     // Advanced
     skip_clean: { desc: "跳过 PDF 清理步骤", default: false },
     enhance_compatibility: { desc: "兼容性增强（等同 skip_clean + dual_translate_first + disable_rich_text_translate）", default: false },
+    disable_rich_text_translate: { desc: "禁用富文本翻译（提高兼容性）", default: false },
+    disable_same_text_fallback: { desc: "禁用“译文等于原文时回退”逻辑", default: false },
     split_short_lines: { desc: "强制拆分短行（可能影响排版/稳定性）", default: false },
     short_line_split_factor: { desc: "短行拆分阈值系数（页内行长中位数 × 系数）", default: 0.8 },
     skip_scanned_detection: { desc: "跳过扫描检测（非扫描文档更快）", default: false },
@@ -300,6 +319,8 @@ const form = reactive({
   // Advanced defaults
   skip_clean: false,
   enhance_compatibility: false,
+  disable_rich_text_translate: false,
+  disable_same_text_fallback: false,
   split_short_lines: false,
   short_line_split_factor: 0.8,
   skip_scanned_detection: false,
