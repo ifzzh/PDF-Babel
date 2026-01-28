@@ -212,7 +212,7 @@ def _prepare_config(
         options.get("auto_extract_glossary"), True
     )
     save_auto_extracted_glossary = _bool_value(
-        options.get("save_auto_extracted_glossary"), False
+        options.get("save_auto_extracted_glossary"), True
     )
     custom_system_prompt = options.get("custom_system_prompt")
     add_formula_placehold_hint = _bool_value(

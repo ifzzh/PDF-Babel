@@ -72,7 +72,7 @@
 |---|---|---|---|---|---|
 | `custom_system_prompt` | 自定义系统提示词 | 空（不传） | ✓ | ✓ | ✓ |
 | `auto_extract_glossary` | 自动抽取术语 | `true` | ✓ | ✓ | ✓ |
-| `save_auto_extracted_glossary` | 保存自动术语 CSV 到输出目录 | `false` | ✓ | ✓ | — |
+| `save_auto_extracted_glossary` | 保存自动术语 CSV 到输出目录 | `true` | ✓ | ✓ | — |
 
 ## 公式与字体
 
