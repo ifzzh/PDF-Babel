@@ -1,86 +1,86 @@
 # Options 覆盖对照表
 
-> 版本：v0.5
+> 版本：v0.6
 > 说明：仅统计“翻译 options（/api/jobs 的 options 字段）”相关能力，不含渠道/凭据与服务端运行参数。
 > 标记：`✓` 表示已支持，`—` 表示未支持。
 
 ## 基础
 
-| 能力（options key） | Babeldoc | 后端 | 前端 |
-|---|---|---|---|
-| `lang_in` | ✓ | ✓ | ✓ |
-| `lang_out` | ✓ | ✓ | ✓ |
-| `pages` | ✓ | ✓ | ✓ |
-| `min_text_length` | ✓ | — | — |
+| 能力（options key） | 说明 | Babeldoc | 后端 | 前端 |
+|---|---|---|---|---|
+| `lang_in` | 源语言代码（如 en） | ✓ | ✓ | ✓ |
+| `lang_out` | 目标语言代码（如 zh） | ✓ | ✓ | ✓ |
+| `pages` | 指定翻译页码范围，格式如 `1,2,1-,-3,3-5` | ✓ | ✓ | ✓ |
+| `min_text_length` | 最小翻译文本长度，低于该长度不翻译 | ✓ | — | — |
 
 ## 输出与水印
 
-| 能力（options key） | Babeldoc | 后端 | 前端 |
-|---|---|---|---|
-| `no_dual` | ✓ | ✓ | — |
-| `no_mono` | ✓ | ✓ | — |
-| `use_alternating_pages_dual` | ✓ | — | — |
-| `watermark_output_mode` | ✓ | ✓ | — |
-| `only_include_translated_page` | ✓ | ✓ | — |
-| `dual_translate_first` | ✓ | — | — |
+| 能力（options key） | 说明 | Babeldoc | 后端 | 前端 |
+|---|---|---|---|---|
+| `no_dual` | 不输出双语 PDF | ✓ | ✓ | — |
+| `no_mono` | 不输出单语 PDF | ✓ | ✓ | — |
+| `use_alternating_pages_dual` | 双语 PDF 使用“原文/译文交替页”模式 | ✓ | — | — |
+| `watermark_output_mode` | 水印输出模式：`watermarked` / `no_watermark` / `both`（后端默认 `no_watermark`） | ✓ | ✓ | — |
+| `only_include_translated_page` | 仅输出翻译页（仅在指定 `pages` 时生效） | ✓ | ✓ | — |
+| `dual_translate_first` | 双语模式下译文页在前 | ✓ | — | — |
 
 ## 性能与分片
 
-| 能力（options key） | Babeldoc | 后端 | 前端 |
-|---|---|---|---|
-| `qps` | ✓ | ✓ | — |
-| `max_pages_per_part` | ✓ | ✓ | — |
-| `pool_max_workers` | ✓ | ✓ | ✓ |
-| `term_pool_max_workers` | ✓ | ✓ | ✓ |
-| `report_interval` | ✓ | — | — |
+| 能力（options key） | 说明 | Babeldoc | 后端 | 前端 |
+|---|---|---|---|---|
+| `qps` | 翻译服务 QPS 限制（速率） | ✓ | ✓ | — |
+| `max_pages_per_part` | 分片翻译时每片最大页数（不设则不分片） | ✓ | ✓ | — |
+| `pool_max_workers` | 内部任务池最大线程数（默认随 QPS） | ✓ | ✓ | ✓ |
+| `term_pool_max_workers` | 术语抽取线程池最大线程数（默认随 pool_max_workers） | ✓ | ✓ | ✓ |
+| `report_interval` | 进度回报间隔（秒） | ✓ | — | — |
 
 ## 版式/兼容与渲染
 
-| 能力（options key） | Babeldoc | 后端 | 前端 |
-|---|---|---|---|
-| `split_short_lines` | ✓ | ✓ | ✓ |
-| `short_line_split_factor` | ✓ | ✓ | ✓ |
-| `skip_clean` | ✓ | ✓ | ✓ |
-| `enhance_compatibility` | ✓ | ✓ | ✓ |
-| `disable_rich_text_translate` | ✓ | ✓ | — |
-| `disable_same_text_fallback` | ✓ | ✓ | — |
-| `translate_table_text` | ✓ | — | — |
-| `show_char_box` | ✓ | — | — |
-| `disable_graphic_element_process` | ✓ | — | — |
-| `merge_alternating_line_numbers` | ✓ | — | — |
-| `skip_translation` | ✓ | — | — |
-| `skip_form_render` | ✓ | — | — |
-| `skip_curve_render` | ✓ | — | — |
-| `only_parse_generate_pdf` | ✓ | — | — |
-| `remove_non_formula_lines` | ✓ | — | — |
-| `non_formula_line_iou_threshold` | ✓ | — | — |
-| `figure_table_protection_threshold` | ✓ | — | — |
-| `skip_formula_offset_calculation` | ✓ | — | — |
+| 能力（options key） | 说明 | Babeldoc | 后端 | 前端 |
+|---|---|---|---|---|
+| `split_short_lines` | 强制拆分短行（可能影响排版/稳定性） | ✓ | ✓ | ✓ |
+| `short_line_split_factor` | 短行拆分阈值系数（页内行长中位数 × 系数） | ✓ | ✓ | ✓ |
+| `skip_clean` | 跳过 PDF 清理步骤 | ✓ | ✓ | ✓ |
+| `enhance_compatibility` | 兼容性增强（等同 `skip_clean` + `dual_translate_first` + `disable_rich_text_translate`） | ✓ | ✓ | ✓ |
+| `disable_rich_text_translate` | 禁用富文本翻译（提高兼容性） | ✓ | ✓ | — |
+| `disable_same_text_fallback` | 禁用“译文等于原文时回退”逻辑 | ✓ | ✓ | — |
+| `translate_table_text` | 翻译表格文字（实验性） | ✓ | — | — |
+| `show_char_box` | 显示字符框（调试） | ✓ | — | — |
+| `disable_graphic_element_process` | 禁用图形元素处理 | ✓ | — | — |
+| `merge_alternating_line_numbers` | 合并交替行号布局（默认开启） | ✓ | — | — |
+| `skip_translation` | 跳过翻译步骤 | ✓ | — | — |
+| `skip_form_render` | 跳过表单渲染 | ✓ | — | — |
+| `skip_curve_render` | 跳过曲线渲染 | ✓ | — | — |
+| `only_parse_generate_pdf` | 只解析并生成 PDF，不做翻译 | ✓ | — | — |
+| `remove_non_formula_lines` | 移除非公式线条（保护图表线） | ✓ | — | — |
+| `non_formula_line_iou_threshold` | 非公式线条判定 IoU 阈值（越高越保守） | ✓ | — | — |
+| `figure_table_protection_threshold` | 图表区域保护 IoU 阈值 | ✓ | — | — |
+| `skip_formula_offset_calculation` | 跳过公式偏移计算 | ✓ | — | — |
 
 ## 扫描/OCR
 
-| 能力（options key） | Babeldoc | 后端 | 前端 |
-|---|---|---|---|
-| `skip_scanned_detection` | ✓ | ✓ | ✓ |
-| `ocr_workaround` | ✓ | ✓ | ✓ |
-| `auto_enable_ocr_workaround` | ✓ | ✓ | ✓ |
+| 能力（options key） | 说明 | Babeldoc | 后端 | 前端 |
+|---|---|---|---|---|
+| `skip_scanned_detection` | 跳过扫描检测（非扫描文档更快） | ✓ | ✓ | ✓ |
+| `ocr_workaround` | OCR workaround（实验性，给文本加背景） | ✓ | ✓ | ✓ |
+| `auto_enable_ocr_workaround` | 自动启用 OCR workaround（重扫描文档） | ✓ | ✓ | ✓ |
 
 ## 术语与提示词
 
-| 能力（options key） | Babeldoc | 后端 | 前端 |
-|---|---|---|---|
-| `custom_system_prompt` | ✓ | ✓ | ✓ |
-| `auto_extract_glossary` | ✓ | ✓ | ✓ |
-| `save_auto_extracted_glossary` | ✓ | ✓ | — |
+| 能力（options key） | 说明 | Babeldoc | 后端 | 前端 |
+|---|---|---|---|---|
+| `custom_system_prompt` | 自定义系统提示词 | ✓ | ✓ | ✓ |
+| `auto_extract_glossary` | 自动抽取术语 | ✓ | ✓ | ✓ |
+| `save_auto_extracted_glossary` | 保存自动术语 CSV 到输出目录 | ✓ | ✓ | — |
 
 ## 公式与字体
 
-| 能力（options key） | Babeldoc | 后端 | 前端 |
-|---|---|---|---|
-| `add_formula_placehold_hint` | ✓ | ✓ | — |
-| `primary_font_family` | ✓ | ✓ | — |
-| `formular_font_pattern` | ✓ | — | — |
-| `formular_char_pattern` | ✓ | — | — |
+| 能力（options key） | 说明 | Babeldoc | 后端 | 前端 |
+|---|---|---|---|---|
+| `add_formula_placehold_hint` | 添加公式占位提示（不推荐，可能影响质量） | ✓ | ✓ | — |
+| `primary_font_family` | 覆盖译文主字体族（`serif` / `sans-serif` / `script`） | ✓ | ✓ | — |
+| `formular_font_pattern` | 公式字体匹配模式 | ✓ | — | — |
+| `formular_char_pattern` | 公式字符匹配模式 | ✓ | — | — |
 
 ## 备注
 
