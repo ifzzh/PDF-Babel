@@ -1,6 +1,6 @@
 # Options 覆盖对照表
 
-> 版本：v0.4
+> 版本：v0.5
 > 说明：仅统计“翻译 options（/api/jobs 的 options 字段）”相关能力，不含渠道/凭据与服务端运行参数。
 > 标记：`✓` 表示已支持，`—` 表示未支持。
 
@@ -84,6 +84,6 @@
 
 ## 备注
 
-- 前端有但后端未接入：`auto_extract_glossary`
-- 后端支持但前端未露出：`qps`、`no_dual`、`no_mono`、`disable_rich_text_translate`、`add_formula_placehold_hint`、`disable_same_text_fallback`、`primary_font_family`、`only_include_translated_page`、`watermark_output_mode`、`max_pages_per_part`
-- babeldoc 支持但后端未接入：见“版式/兼容与渲染”与“术语/提示词”中标记为 `—` 的条目
+- 前端已发送但未开放配置：`pool_max_workers`、`term_pool_max_workers`
+- 后端支持但前端未露出：`qps`、`no_dual`、`no_mono`、`disable_rich_text_translate`、`add_formula_placehold_hint`、`disable_same_text_fallback`、`primary_font_family`、`only_include_translated_page`、`watermark_output_mode`、`max_pages_per_part`、`save_auto_extracted_glossary`
+- babeldoc 支持但后端未接入：见“版式/兼容与渲染”与“公式与字体”中标记为 `—` 的条目
