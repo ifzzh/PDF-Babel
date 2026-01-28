@@ -1,0 +1,26 @@
+FROM python:3.12-slim-bookworm
+
+# System deps (runtime libs for opencv/onnx/etc.)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        libgl1 \
+        libglib2.0-0 \
+        libgomp1 \
+        libstdc++6 \
+        libspatialindex6 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Python deps (locked)
+COPY pyproject.toml uv.lock README.md ./
+COPY babeldoc ./babeldoc
+
+RUN pip install --no-cache-dir -U pip \
+    && pip install --no-cache-dir uv \
+    && uv export --frozen --no-dev -o /tmp/requirements.txt \
+    && grep -vE 'file:///app|^--editable|^-e ' /tmp/requirements.txt > /tmp/requirements.clean.txt \
+    && pip install --no-cache-dir -r /tmp/requirements.clean.txt \
+    && pip install --no-cache-dir --no-deps . \
+    && rm -f /tmp/requirements.txt /tmp/requirements.clean.txt
