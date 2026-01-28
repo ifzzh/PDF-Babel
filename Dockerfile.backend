@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=ifzzh520/pdf-babel-backend-base:latest
+ARG BASE_IMAGE=ifzzh520/pdf-babel-backend-base:1.1.0
 FROM ${BASE_IMAGE}
 
 WORKDIR /app
