@@ -49,10 +49,10 @@
 | `show_char_box` | 显示字符框（调试） | `false` | ✓ | — | — |
 | `disable_graphic_element_process` | 禁用图形元素处理 | `false` | ✓ | — | — |
 | `merge_alternating_line_numbers` | 合并交替行号布局（默认开启） | `true` | ✓ | — | — |
-| `skip_translation` | 跳过翻译步骤 | `false` | ✓ | ✓ | — |
+| `skip_translation` | 跳过翻译步骤 | `false` | ✓ | ✓ | ✓ |
 | `skip_form_render` | 跳过表单渲染 | `false` | ✓ | — | — |
 | `skip_curve_render` | 跳过曲线渲染 | `false` | ✓ | — | — |
-| `only_parse_generate_pdf` | 只解析并生成 PDF，不做翻译 | `false` | ✓ | ✓ | — |
+| `only_parse_generate_pdf` | 只解析并生成 PDF，不做翻译 | `false` | ✓ | ✓ | ✓ |
 | `remove_non_formula_lines` | 移除非公式线条（保护图表线） | `false` | ✓ | — | — |
 | `non_formula_line_iou_threshold` | 非公式线条判定 IoU 阈值（越高越保守） | `0.9` | ✓ | — | — |
 | `figure_table_protection_threshold` | 图表区域保护 IoU 阈值 | `0.9` | ✓ | — | — |

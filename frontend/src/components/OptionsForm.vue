@@ -292,6 +292,30 @@
         </div>
       </div>
     </BaseAccordion>
+
+    <!-- Debug & Experimental -->
+    <BaseAccordion title="Advanced (Experimental)" :default-open="false">
+      <div class="space-y-4">
+        <div>
+           <h4 class="text-xs font-bold text-red-400 uppercase tracking-wider mb-2">Phase 4 Options</h4>
+           <div class="flex flex-wrap gap-3">
+               <BasePillOption 
+                  v-model="form.skip_translation" 
+                  label="Skip Translation" 
+                  :desc="OPTIONS_META.skip_translation.desc" 
+                />
+               <BasePillOption 
+                  v-model="form.only_parse_generate_pdf" 
+                  label="Only Parse & Generate" 
+                  :desc="OPTIONS_META.only_parse_generate_pdf.desc" 
+                />
+           </div>
+           <p class="text-xs text-gray-400 mt-2 italic">
+             Note: These options significantly reduce the translation pipeline steps.
+           </p>
+        </div>
+      </div>
+    </BaseAccordion>
   </div>
 </template>
 
@@ -337,6 +361,10 @@ const OPTIONS_META = {
     max_pages_per_part: { desc: "分片翻译时每片最大页数（不设则不分片）", default: null },
     pool_max_workers: { desc: "内部任务池最大线程数（默认随 QPS）", default: null },
     term_pool_max_workers: { desc: "术语抽取线程池最大线程数（默认随 pool_max_workers）", default: null },
+
+    // Phase 4 - Debug
+    skip_translation: { desc: "跳过 Translate Paragraphs；同时会自动关闭术语抽取", default: false },
+    only_parse_generate_pdf: { desc: "只解析并生成 PDF，不做翻译；会移除大量阶段", default: false },
 };
 
 const form = reactive({
@@ -370,7 +398,11 @@ const form = reactive({
   qps: 4,
   max_pages_per_part: null,
   pool_max_workers: null, // Auto
-  term_pool_max_workers: null // Auto
+  term_pool_max_workers: null, // Auto
+
+  // Debug
+  skip_translation: false,
+  only_parse_generate_pdf: false,
 });
 
 // Mutual exclusion for no_dual / no_mono
