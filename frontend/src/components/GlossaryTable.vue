@@ -139,12 +139,19 @@ const loadCsv = async () => {
                      // But backend doc says standard CSV with headers usually.
                      // Let's assume standard "source", "target" or similar columns.
                      
-                     const srcKey = keys.find(k => k.toLowerCase().includes('source') || k.toLowerCase().includes('original')) || keys[0];
-                     const tgtKey = keys.find(k => k.toLowerCase().includes('target') || k.toLowerCase().includes('translation')) || keys[1];
+                     const srcKey = keys.find(k => k.toLowerCase().includes('source') || k.toLowerCase().includes('original')) ?? keys[0];
+                     const tgtKey = keys.find(k => k.toLowerCase().includes('target') || k.toLowerCase().includes('translation')) ?? keys[1] ?? srcKey;
+
+                     if (!srcKey) {
+                         allRows.value = [];
+                         loading.value = false;
+                         return;
+                     }
+                     const tgtKeySafe = tgtKey ?? srcKey;
 
                      allRows.value = results.data.map((row: any) => ({
                          source: row[srcKey] || '',
-                         target: row[tgtKey] || ''
+                         target: row[tgtKeySafe] || ''
                      })).filter(r => r.source || r.target);
                 } else {
                     allRows.value = [];

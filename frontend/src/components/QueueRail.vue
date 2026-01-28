@@ -133,7 +133,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { fetchQueue, fetchJob, resumeQueue } from '../api';
 
@@ -210,7 +210,7 @@ const maximizeQueue = () => {
     isExpanded.value = false; // Collapse rail when navigating
 };
 
-const resumeQueueAction = async (selectedOnly: boolean) => {
+const resumeQueueAction = async () => {
     loadingAction.value = true;
     try {
         await resumeQueue({ mode: 'all' });

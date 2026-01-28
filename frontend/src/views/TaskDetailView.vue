@@ -210,9 +210,9 @@ const loadData = async () => {
 
         // Default fallback
         if (resultFiles.value.length > 0) {
-            previewFile.value = resultFiles.value[0];
+            previewFile.value = resultFiles.value[0] ?? null;
         } else if (files.value.length > 0) {
-            previewFile.value = files.value[0];
+            previewFile.value = files.value[0] ?? null;
         }
     } catch (e) {
         console.error(e);
