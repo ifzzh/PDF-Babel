@@ -72,11 +72,8 @@ ensure_base_image() {
     return 0
   fi
 
-  echo "==> Build backend base: ${image}:${tag}"
-  docker build -f "$dockerfile" \
-    -t "${image}:${tag}" \
-    -t "${image}:latest" \
-    .
+  echo "未找到基础镜像，请先构建并推送：${image}:${tag}" >&2
+  exit 1
 }
 
 ensure_base_image "$BACKEND_BASE_REPO" "$BACKEND_BASE_VERSION" "Dockerfile.backend.base"
