@@ -72,7 +72,7 @@
 |---|---|---|---|---|---|
 | `custom_system_prompt` | 自定义系统提示词 | 空（不传） | ✓ | ✓ | ✓ |
 | `auto_extract_glossary` | 自动抽取术语 | `true` | ✓ | ✓ | ✓ |
-| `save_auto_extracted_glossary` | 保存自动术语 CSV 到输出目录 | `true` | ✓ | ✓ | — |
+| `save_auto_extracted_glossary` | 保存自动术语 CSV 到输出目录 | `true` | ✓ | ✓ | ✓ |
 
 ## 公式与字体
 
@@ -86,5 +86,5 @@
 ## 备注
 
 - 前端已发送但未开放配置：`pool_max_workers`、`term_pool_max_workers`
-- 后端支持但前端未露出：`qps`、`disable_rich_text_translate`、`add_formula_placehold_hint`、`disable_same_text_fallback`、`primary_font_family`、`max_pages_per_part`、`save_auto_extracted_glossary`
+- 后端支持但前端未露出：`qps`、`disable_rich_text_translate`、`add_formula_placehold_hint`、`disable_same_text_fallback`、`primary_font_family`、`max_pages_per_part`
 - babeldoc 支持但后端未接入：见“版式/兼容与渲染”与“公式与字体”中标记为 `—` 的条目

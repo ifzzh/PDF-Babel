@@ -156,6 +156,11 @@
                   label="Auto Extract Glossary" 
                   :desc="OPTIONS_META.auto_extract_glossary.desc" 
                 />
+                 <BasePillOption 
+                  v-model="form.save_auto_extracted_glossary" 
+                  label="Save Glossary CSV" 
+                  :desc="OPTIONS_META.save_auto_extracted_glossary.desc" 
+                />
              </div>
         </div>
 
@@ -201,6 +206,7 @@ const OPTIONS_META = {
     ocr_workaround: { desc: "OCR workaround（实验性，给文本加背景）", default: false },
     auto_enable_ocr_workaround: { desc: "自动启用 OCR workaround（重扫描文档）", default: false },
     auto_extract_glossary: { desc: "自动抽取术语", default: true },
+    save_auto_extracted_glossary: { desc: "保存自动术语 CSV 到输出目录", default: true },
     custom_system_prompt: { desc: "自定义系统提示词", default: "" },
 };
 
@@ -224,6 +230,7 @@ const form = reactive({
   ocr_workaround: false,
   auto_enable_ocr_workaround: false,
   auto_extract_glossary: true,
+  save_auto_extracted_glossary: true,
   custom_system_prompt: '',
   pool_max_workers: 8,
   term_pool_max_workers: 4
