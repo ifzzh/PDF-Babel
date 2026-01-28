@@ -59,6 +59,19 @@
           </div>
         </div>
       </div>
+
+      <!-- Bottom Progress (Circular) -->
+      <div class="h-64 shrink-0 p-4 border-t bg-white flex flex-col items-center justify-start pt-8">
+         <CircularStageProgress
+            :stages="job.stages"
+            :current-stage-name="job.stageName"
+            :current-stage-progress="job.stageProgress"
+            :overall-progress="job.overallProgress"
+            :status="job.status"
+            :size="140"
+            :stroke-width="10"
+         />
+      </div>
     </div>
 
     <!-- Main Preview Area -->
@@ -100,10 +113,12 @@
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue';
 import type { JobFile } from '../types';
+import CircularStageProgress from './CircularStageProgress.vue';
 
 const props = defineProps<{
   sourceFile: File | null;
   resultFiles: JobFile[];
+  job: any; // Using any for simplicity as Job type might need update or mapped from useJob
 }>();
 
 // State for local object URLs to revoke them later

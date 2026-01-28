@@ -61,25 +61,12 @@
     <!-- Right Column: Progress & Results -->
     <div class="flex-1 h-full overflow-hidden bg-gray-50 flex flex-col relative">
       
-      <!-- Progress Monitor -->
-      <section v-if="job.status !== 'idle'" class="bg-white border-b shadow-sm p-4 z-20 shrink-0">
-        <h2 class="text-lg font-medium text-gray-900 mb-4">Progress Monitor</h2>
-        <ProgressPanel 
-           :overall-progress="job.overallProgress"
-           :stage-progress="job.stageProgress"
-           :stage-name="job.stageName"
-           :status="job.status"
-           :error="job.error"
-           :info="job.info"
-        />
-      </section>
-
-
       <!-- Workspace (Review & Results) -->
       <WorkspacePanel 
          v-if="file"
          :source-file="file"
          :result-files="files"
+         :job="job"
          class="flex-1"
       />
 
@@ -99,7 +86,6 @@ import { ref, computed } from 'vue';
 import UploadCard from '../components/UploadCard.vue';
 import OptionsForm from '../components/OptionsForm.vue';
 import SourceSelector from '../components/SourceSelector.vue';
-import ProgressPanel from '../components/ProgressPanel.vue';
 import WorkspacePanel from '../components/WorkspacePanel.vue';
 import { useJob } from '../composables/useJob';
 import type { JobFile } from '../types';

@@ -10,7 +10,8 @@ export function useJob() {
         stageName: '',
         stageProgress: 0,
         error: '',
-        info: ''
+        info: '',
+        stages: [] as Array<{ name: string; weight: number; status: 'pending' | 'running' | 'completed'; percent: number }>
     });
 
     const files = ref<JobFile[]>([]);
@@ -25,6 +26,7 @@ export function useJob() {
         job.stageProgress = 0;
         job.error = '';
         job.info = '';
+        job.stages = [];
         files.value = [];
         if (eventSource) {
             eventSource.close();
@@ -103,20 +105,62 @@ export function useJob() {
         // Fixed Types: stage_summary | progress_start | progress_update | progress_end | finish | error | heartbeat
         switch (payload.type) {
             case 'stage_summary':
+                if (payload.data && Array.isArray(payload.data.stages)) {
+                    // Populate stages from summary
+                    job.stages = payload.data.stages.map((s: any) => ({
+                        name: s.name,
+                        weight: s.weight ?? s.percent, // Backend might send 'percent' (0-100) as weight share
+                        status: 'pending',
+                        percent: 0
+                    }));
+                }
+                job.status = 'running';
+                break;
             case 'progress_start':
                 job.status = 'running';
-                // Optional info update
+                if (payload.data.stage) {
+                    job.stageName = payload.data.stage;
+                    // Mark previous stages as completed, current as running
+                    if (job.stages.length > 0) {
+                        let foundCurrent = false;
+                        for (const s of job.stages) {
+                            if (s.name === payload.data.stage) {
+                                s.status = 'running';
+                                foundCurrent = true;
+                            } else if (!foundCurrent) {
+                                s.status = 'completed';
+                                s.percent = 100;
+                            }
+                        }
+                    }
+                }
                 break;
             case 'progress_update':
                 job.status = 'running';
                 job.overallProgress = payload.data.overall_progress || job.overallProgress;
                 job.stageName = payload.data.stage || job.stageName;
                 job.stageProgress = payload.data.stage_progress || 0;
+
+                // Update stage in list
+                if (job.stages.length > 0 && job.stageName) {
+                    const currentStage = job.stages.find(s => s.name === job.stageName);
+                    if (currentStage) {
+                        currentStage.status = 'running';
+                        currentStage.percent = job.stageProgress;
+                    }
+                }
                 break;
             case 'finish':
                 job.status = 'finished';
                 job.overallProgress = 100;
                 job.stageProgress = 100;
+                // Mark all stages as completed
+                if (job.stages.length > 0) {
+                    job.stages.forEach(s => {
+                        s.status = 'completed';
+                        s.percent = 100;
+                    });
+                }
                 if (eventSource) eventSource.close();
                 loadFiles(job.id);
                 break;
