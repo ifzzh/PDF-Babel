@@ -3,7 +3,7 @@
 > 版本：v0.7
 > 说明：仅统计“翻译 options（/api/jobs 的 options 字段）”相关能力，不含渠道/凭据与服务端运行参数。
 > 标记：`✓` 表示已支持，`—` 表示未支持。
-> 默认值：以 Babeldoc CLI 默认值为准，前后端应保持一致。
+> 默认值：以当前系统默认值为准，前后端应保持一致。
 
 ## 基础
 
@@ -21,7 +21,7 @@
 | `no_dual` | 不输出双语 PDF | `false` | ✓ | ✓ | — |
 | `no_mono` | 不输出单语 PDF | `false` | ✓ | ✓ | — |
 | `use_alternating_pages_dual` | 双语 PDF 使用“原文/译文交替页”模式 | `false` | ✓ | — | — |
-| `watermark_output_mode` | 水印输出模式：`watermarked` / `no_watermark` / `both` | `watermarked` | ✓ | ✓ | — |
+| `watermark_output_mode` | 水印输出模式：`watermarked` / `no_watermark` / `both` | `no_watermark` | ✓ | ✓ | — |
 | `only_include_translated_page` | 仅输出翻译页（仅在指定 `pages` 时生效） | `false` | ✓ | ✓ | — |
 | `dual_translate_first` | 双语模式下译文页在前 | `false` | ✓ | — | — |
 

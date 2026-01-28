@@ -85,7 +85,7 @@ def _require_value(payload: dict[str, Any], key: str) -> Any:
 
 def _parse_watermark_mode(value: str | None) -> WatermarkOutputMode:
     if not value:
-        return WatermarkOutputMode.Watermarked
+        return WatermarkOutputMode.NoWatermark
     if value == WatermarkOutputMode.NoWatermark.value:
         return WatermarkOutputMode.NoWatermark
     if value == WatermarkOutputMode.Both.value:
