@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    image: ifzzh520/pdf-babel-backend:latest
+    image: ifzzh520/pdf-babel-backend:1.1.1
     environment:
       - BABELDOC_DATA_ROOT=/data
       - BABELDOC_PLATFORM_CONFIG=/data/config/platform.json
@@ -17,7 +17,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
-    image: ifzzh520/pdf-babel-frontend:latest
+    image: ifzzh520/pdf-babel-frontend:1.1.1
     ports:
       - "53921:80"
     depends_on:
