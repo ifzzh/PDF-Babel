@@ -10,7 +10,7 @@ services:
       - BABELDOC_LOG_LEVEL=INFO
       - BABELDOC_TIMEZONE=Asia/Shanghai
     volumes:
-      - /mnt/raid1/babeldoc-data:/data
+      - ./data:/data
     restart: unless-stopped
 
   frontend:
