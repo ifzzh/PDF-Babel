@@ -19,7 +19,7 @@ services:
       dockerfile: Dockerfile.frontend
     image: ifzzh520/pdf-babel-frontend:latest
     ports:
-      - "8080:80"
+      - "53921:80"
     depends_on:
       - backend
     restart: unless-stopped

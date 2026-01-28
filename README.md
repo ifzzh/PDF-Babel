@@ -134,6 +134,50 @@ uv run babeldoc --files example.pdf --files example2.pdf --openai --openai-model
 
 发布顺序建议：**先后端基础镜像，后后端，再前端**（确保 API 变更已先上线）。
 
+### 开发流程（前后端）
+
+- 后端本地开发：`uvicorn backend.main:app --host 127.0.0.1 --port 8000`
+- 前端本地开发：`cd frontend && npm run dev -- --host`
+- 前端与后端通过 `/api` 反向代理交互（见 `frontend/nginx.conf`）。
+
+### 镜像打包流程（分层基础镜像）
+
+**后端基础镜像用于固化 BabelDOC 依赖**，后端镜像只拷贝服务代码。
+
+1) 依赖发生变更（`pyproject.toml` / `uv.lock`）时：
+```bash
+# 更新依赖锁（需联网）
+uv lock
+
+# 构建并推送基础镜像
+docker build -f Dockerfile.backend.base \
+  -t ifzzh520/pdf-babel-backend-base:1.1.0 \
+  -t ifzzh520/pdf-babel-backend-base:latest \
+  .
+docker push ifzzh520/pdf-babel-backend-base:1.1.0
+docker push ifzzh520/pdf-babel-backend-base:latest
+```
+
+2) 后端发布（基于已推送的基础镜像）：
+```bash
+docker build -f Dockerfile.backend \
+  -t ifzzh520/pdf-babel-backend:1.0.0 \
+  -t ifzzh520/pdf-babel-backend:latest \
+  .
+docker push ifzzh520/pdf-babel-backend:1.0.0
+docker push ifzzh520/pdf-babel-backend:latest
+```
+
+3) 前端发布：
+```bash
+docker build -f Dockerfile.frontend \
+  -t ifzzh520/pdf-babel-frontend:1.0.0 \
+  -t ifzzh520/pdf-babel-frontend:latest \
+  .
+docker push ifzzh520/pdf-babel-frontend:1.0.0
+docker push ifzzh520/pdf-babel-frontend:latest
+```
+
 打包并推送：
 
 ```bash
@@ -145,6 +189,18 @@ uv run babeldoc --files example.pdf --files example2.pdf --openai --openai-model
 ```
 
 > 第三个参数为后端基础镜像版本，缺省时优先读取 `docker.version.backend.base`，若不存在则默认使用后端版本号。
+
+> 注意：发布脚本会**优先使用本地或拉取已有的基础镜像**，不会自动构建基础镜像。
+
+### 运行（Compose）
+
+默认数据目录挂载：
+
+```
+/mnt/raid1/babeldoc-data:/data
+```
+
+前端对外端口在 `docker-compose.yml` 中配置（当前为 `53921:80`，可根据实际端口占用调整）。
 
 > [!NOTE]
 > This CLI is mainly for debugging purposes. Although end users can use this CLI to translate files, we do not provide any technical support for this purpose.
