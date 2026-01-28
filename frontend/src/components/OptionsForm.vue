@@ -36,9 +36,9 @@
     </div>
 
     <!-- Output & Watermark -->
-    <div>
-      <h3 class="text-sm font-medium text-gray-700 mb-2">Output & Watermark</h3>
-      <div class="border rounded-md p-4 bg-gray-50 space-y-4">
+    <!-- Output & Watermark -->
+    <BaseAccordion title="Output & Watermark" :default-open="true">
+      <div class="space-y-4">
           <!-- PDF Types -->
           <div>
               <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">PDF Types</h4>
@@ -84,11 +84,80 @@
               </div>
           </div>
       </div>
-    </div>
+    </BaseAccordion>
 
-    <div>
-      <h3 class="text-sm font-medium text-gray-700 mb-2">Advanced Options</h3>
-      <div class="border rounded-md p-4 bg-gray-50 space-y-4">
+    <!-- Performance & Split -->
+    <!-- Performance & Split -->
+    <BaseAccordion title="Performance & Split" :default-open="false">
+      <div class="space-y-4">
+          <!-- QPS & Split -->
+          <div class="grid grid-cols-2 gap-4">
+              <div>
+                  <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                      QPS Limit
+                      <InfoTooltip :text="OPTIONS_META.qps.desc" />
+                  </label>
+                  <input 
+                      v-model.number="form.qps" 
+                      type="number" 
+                      min="1"
+                      placeholder="Default: 4"
+                      class="w-full border rounded-md px-3 py-2 text-sm"
+                  >
+              </div>
+              <div>
+                  <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                      Max Pages / Part
+                      <InfoTooltip :text="OPTIONS_META.max_pages_per_part.desc" />
+                  </label>
+                  <input 
+                      v-model.number="form.max_pages_per_part" 
+                      type="number" 
+                      min="1"
+                      placeholder="No Split"
+                      class="w-full border rounded-md px-3 py-2 text-sm"
+                  >
+              </div>
+          </div>
+
+          <!-- Separator -->
+          <div class="border-t border-gray-200"></div>
+
+          <!-- Thread Pools -->
+          <div class="grid grid-cols-2 gap-4">
+              <div>
+                  <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                      Pool Workers
+                      <InfoTooltip :text="OPTIONS_META.pool_max_workers.desc" />
+                  </label>
+                  <input 
+                      v-model.number="form.pool_max_workers" 
+                      type="number" 
+                      min="1"
+                      placeholder="Auto"
+                      class="w-full border rounded-md px-3 py-2 text-sm"
+                  >
+              </div>
+              <div>
+                  <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                      Term Pool Workers
+                      <InfoTooltip :text="OPTIONS_META.term_pool_max_workers.desc" />
+                  </label>
+                  <input 
+                      v-model.number="form.term_pool_max_workers" 
+                      type="number" 
+                      min="1"
+                      placeholder="Auto"
+                      class="w-full border rounded-md px-3 py-2 text-sm"
+                  >
+              </div>
+          </div>
+      </div>
+    </BaseAccordion>
+
+    <!-- Advanced Options -->
+    <BaseAccordion title="Advanced Options" :default-open="false">
+      <div class="space-y-4">
         
         <!-- Pre-processing -->
         <div>
@@ -173,7 +242,7 @@
            <textarea v-model="form.custom_system_prompt" class="w-full text-xs border rounded p-2" rows="2" placeholder="Start with..."></textarea>
         </div>
       </div>
-    </div>
+    </BaseAccordion>
   </div>
 </template>
 
@@ -182,6 +251,7 @@ import { reactive, watch } from 'vue';
 import InfoTooltip from './InfoTooltip.vue';
 import BasePillOption from './BasePillOption.vue';
 import BasePillRadio from './BasePillRadio.vue';
+import BaseAccordion from './BaseAccordion.vue';
 
 const emit = defineEmits(['update:options']);
 
@@ -208,6 +278,12 @@ const OPTIONS_META = {
     auto_extract_glossary: { desc: "自动抽取术语", default: true },
     save_auto_extracted_glossary: { desc: "保存自动术语 CSV 到输出目录", default: true },
     custom_system_prompt: { desc: "自定义系统提示词", default: "" },
+
+    // Performance & Split
+    qps: { desc: "翻译服务 QPS 限制（速率）", default: 4 },
+    max_pages_per_part: { desc: "分片翻译时每片最大页数（不设则不分片）", default: null },
+    pool_max_workers: { desc: "内部任务池最大线程数（默认随 QPS）", default: null },
+    term_pool_max_workers: { desc: "术语抽取线程池最大线程数（默认随 pool_max_workers）", default: null },
 };
 
 const form = reactive({
@@ -232,8 +308,12 @@ const form = reactive({
   auto_extract_glossary: true,
   save_auto_extracted_glossary: true,
   custom_system_prompt: '',
-  pool_max_workers: 8,
-  term_pool_max_workers: 4
+  
+  // Performance
+  qps: 4,
+  max_pages_per_part: null,
+  pool_max_workers: null, // Auto
+  term_pool_max_workers: null // Auto
 });
 
 // Mutual exclusion for no_dual / no_mono
@@ -245,6 +325,13 @@ watch(() => form.no_mono, (val) => {
 });
 
 watch(form, (newVal) => {
-  emit('update:options', { ...newVal });
+  // Filter out null/undefined/empty string options to avoid sending invalid values
+  const cleanOptions: Record<string, any> = {};
+  for (const [key, value] of Object.entries(newVal)) {
+      if (value !== null && value !== undefined && value !== '') {
+          cleanOptions[key] = value;
+      }
+  }
+  emit('update:options', cleanOptions);
 }, { deep: true, immediate: true });
 </script>
