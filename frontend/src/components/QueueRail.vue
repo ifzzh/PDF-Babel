@@ -41,7 +41,7 @@
           <!-- Actions -->
           <div class="p-2 border-b border-white/20 bg-white/20 flex gap-2">
               <button 
-                  @click="resumeQueueAction(false)"
+                  @click="resumeQueueAction()"
                   :disabled="loadingAction"
                   class="flex-1 py-1.5 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
               >
