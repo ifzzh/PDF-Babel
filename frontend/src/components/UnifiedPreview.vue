@@ -6,8 +6,9 @@
          class="flex-1 overflow-auto bg-gray-200/50 relative"
          @wheel.ctrl.prevent="handleWheel"
       >
+
           <!-- Content: PDF (canvas render via PDF.js) -->
-          <div v-if="isPdf && url" class="flex flex-col items-center">
+          <div v-if="isPdf && url" class="flex flex-col items-center gap-4">
               <div v-if="loadingPdf" class="text-gray-500 text-sm">Loading PDF...</div>
               <canvas
                  v-for="page in pageNumbers"

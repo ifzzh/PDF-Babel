@@ -144,7 +144,7 @@
              :file-name="activeItem.file.name || activeItem.file.filename"
              v-model:scale="zoomLevel"
              v-model:fitMode="fitMode"
-             v-model:fitScale="fitScale"
+
           />
           <div v-else class="w-full h-full flex items-center justify-center text-gray-400 bg-gray-50">
              Select a file to preview
@@ -192,24 +192,16 @@ const activeItem = ref<ActiveItem | null>(null);
 const zoomLevel = ref(1.0);
 const fitMode = ref<'width' | 'height' | 'manual'>('height');
 const zoomInputValue = ref('100');
-const fitScale = ref(1.0);
 
-// Sync zoom input with level (100% = fit scale when fit mode is active)
-watch([zoomLevel, fitMode, fitScale], () => {
-    const base = fitMode.value === 'manual'
-        ? zoomLevel.value
-        : (fitScale.value > 0 ? zoomLevel.value / fitScale.value : zoomLevel.value);
-    zoomInputValue.value = Math.round(base * 100).toString();
+// Sync zoom input with level
+watch(zoomLevel, (val) => {
+    zoomInputValue.value = Math.round(val * 100).toString();
 });
 
 const handleZoomInput = () => {
     const val = parseFloat(zoomInputValue.value);
     if (!isNaN(val)) {
-        const base = val / 100;
-        const nextScale = fitMode.value === 'manual'
-            ? base
-            : (fitScale.value > 0 ? fitScale.value * base : base);
-        zoomLevel.value = Math.min(Math.max(nextScale, 0.1), 5.0);
+        zoomLevel.value = Math.min(Math.max(val / 100, 0.1), 5.0);
         if (fitMode.value !== 'manual') fitMode.value = 'manual';
     } else {
         zoomInputValue.value = Math.round(zoomLevel.value * 100).toString();
@@ -217,14 +209,12 @@ const handleZoomInput = () => {
 };
 
 const zoomIn = () => {
-    const step = fitMode.value === 'manual' ? 0.1 : (fitScale.value * 0.1);
-    zoomLevel.value = Math.min(zoomLevel.value + step, 5.0);
+    zoomLevel.value = Math.min(zoomLevel.value + 0.1, 5.0);
     if (fitMode.value !== 'manual') fitMode.value = 'manual';
 };
 
 const zoomOut = () => {
-    const step = fitMode.value === 'manual' ? 0.1 : (fitScale.value * 0.1);
-    zoomLevel.value = Math.max(zoomLevel.value - step, 0.1);
+    zoomLevel.value = Math.max(zoomLevel.value - 0.1, 0.1);
     if (fitMode.value !== 'manual') fitMode.value = 'manual';
 };
 
