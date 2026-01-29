@@ -3,11 +3,11 @@
       <!-- Scrollable Container -->
       <div 
          ref="containerRef"
-         class="flex-1 overflow-auto bg-gray-200/50 p-4 relative"
+         class="flex-1 overflow-auto bg-gray-200/50 relative"
          @wheel.ctrl.prevent="handleWheel"
       >
           <!-- Content: PDF (canvas render via PDF.js) -->
-          <div v-if="isPdf && url" class="flex flex-col items-center gap-4 py-4">
+          <div v-if="isPdf && url" class="flex flex-col items-center">
               <div v-if="loadingPdf" class="text-gray-500 text-sm">Loading PDF...</div>
               <canvas
                  v-for="page in pageNumbers"
@@ -33,8 +33,8 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick, shallowRef } from 'vue';
-import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy } from 'pdfjs-dist';
-import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy } from 'pdfjs-dist/legacy/build/pdf.mjs';
+import workerSrc from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 import GlossaryTable from './GlossaryTable.vue';
 
 GlobalWorkerOptions.workerSrc = workerSrc;
@@ -47,11 +47,13 @@ const props = defineProps<{
     // Controlled props
     scale?: number;
     fitMode?: 'width' | 'height' | 'manual';
+    fitScale?: number;
 }>();
 
 const emit = defineEmits<{
     (e: 'update:scale', value: number): void;
     (e: 'update:fitMode', value: 'width' | 'height' | 'manual'): void;
+    (e: 'update:fitScale', value: number): void;
 }>();
 
 // Utils
@@ -109,9 +111,9 @@ const handleWheel = (e: WheelEvent) => {
 const calcFitScale = (mode: 'width' | 'height') => {
     if (!containerRef.value) return 1.0;
     const base = pageBaseSize.value ?? { width: 800, height: 1132 };
-    const padding = 40;
-    const cw = containerRef.value.clientWidth - padding; 
-    const ch = containerRef.value.clientHeight - padding;
+    // Remove padding subtraction to fill the container
+    const cw = containerRef.value.clientWidth; 
+    const ch = containerRef.value.clientHeight;
     
     // Safety check for zero dimensions
     if (cw <= 0 || ch <= 0) return 1.0;
@@ -121,6 +123,8 @@ const calcFitScale = (mode: 'width' | 'height') => {
         s = cw / base.width;
     } else {
         s = ch / base.height;
+        // User request: Cap at 100% for height fit
+        s = Math.min(s, 1.0);
     }
     return s;
 };
@@ -128,6 +132,7 @@ const calcFitScale = (mode: 'width' | 'height') => {
 const applyFit = (mode: 'width' | 'height') => {
     const s = calcFitScale(mode);
     emit('update:scale', s);
+    emit('update:fitScale', s);
     // Don't emit fitMode update here if we are just reapplying, 
     // but the parent setting fitMode triggers this typically.
 };
