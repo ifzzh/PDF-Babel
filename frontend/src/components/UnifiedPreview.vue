@@ -3,7 +3,7 @@
       <!-- Scrollable Container -->
       <div 
          ref="containerRef"
-         class="flex-1 overflow-auto bg-gray-200/50 relative"
+         class="flex-1 overflow-y-scroll bg-gray-200/50 relative"
          @wheel.ctrl.prevent="handleWheel"
       >
 
@@ -55,6 +55,7 @@ const emit = defineEmits<{
     (e: 'update:scale', value: number): void;
     (e: 'update:fitMode', value: 'width' | 'height' | 'manual'): void;
     (e: 'update:fitScale', value: number): void;
+    (e: 'update:baseScale', value: number): void;
 }>();
 
 // Utils
@@ -109,12 +110,23 @@ const handleWheel = (e: WheelEvent) => {
     setScale(currentScale.value + delta);
 };
 
+const updateBaseScale = () => {
+    if (!containerRef.value) return;
+    const base = pageBaseSize.value ?? { width: 800, height: 1132 };
+    // Subtract explicit buffer to prevent subpixel overflow (increased to 60px for safety)
+    const ch = containerRef.value.clientHeight - 60;
+    // Base Scale = Scale to fit height (100% view)
+    if (base.height > 0) {
+        emit('update:baseScale', ch / base.height);
+    }
+};
+
 const calcFitScale = (mode: 'width' | 'height') => {
     if (!containerRef.value) return 1.0;
     const base = pageBaseSize.value ?? { width: 800, height: 1132 };
     // Remove padding subtraction to fill the container
     const cw = containerRef.value.clientWidth; 
-    const ch = containerRef.value.clientHeight;
+    const ch = containerRef.value.clientHeight - 60;
     
     // Safety check for zero dimensions
     if (cw <= 0 || ch <= 0) return 1.0;
@@ -124,18 +136,22 @@ const calcFitScale = (mode: 'width' | 'height') => {
         s = cw / base.width;
     } else {
         s = ch / base.height;
-        // User request: Cap at 100% for height fit
-        s = Math.min(s, 1.0);
+        // Removed capping to ensure true Fit Height is calculated
     }
+    return s;
+    
+    // Always update base scale during calculations to keep it fresh
+    if (mode === 'height') emit('update:baseScale', s);
+    else updateBaseScale(); // if width mode, still update height-based baseScale
+
     return s;
 };
 
 const applyFit = (mode: 'width' | 'height') => {
     const s = calcFitScale(mode);
+    if (Math.abs(s - currentScale.value) < 0.005) return;
     emit('update:scale', s);
     emit('update:fitScale', s);
-    // Don't emit fitMode update here if we are just reapplying, 
-    // but the parent setting fitMode triggers this typically.
 };
 
 const cancelRenderTasks = () => {
@@ -212,6 +228,16 @@ const renderAllPages = async () => {
     }
 };
 
+const scheduleRender = (() => {
+    let timer: number | undefined;
+    return () => {
+        if (timer) window.clearTimeout(timer);
+        timer = window.setTimeout(() => {
+            renderAllPages();
+        }, 120);
+    };
+})();
+
 const loadPdf = async (url: string) => {
     await cleanupPdf();
     loadingPdf.value = true;
@@ -226,8 +252,10 @@ const loadPdf = async (url: string) => {
         const viewport = firstPage.getViewport({ scale: 1 });
         pageBaseSize.value = { width: viewport.width, height: viewport.height };
 
+        updateBaseScale(); // Calculate initial base scale
+
         await nextTick();
-        await renderAllPages();
+        scheduleRender();
     } finally {
         loadingPdf.value = false;
     }
@@ -261,19 +289,31 @@ watch(() => props.url, async (newUrl) => {
 // Re-render when scale changes
 watch(() => currentScale.value, () => {
     if (pdfDoc.value) {
-        renderAllPages();
+        scheduleRender();
     }
 });
+
+// Debounce util
+const debounce = (fn: Function, ms: number) => {
+    let timeoutId: any;
+    return (...args: any[]) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn(...args), ms);
+    };
+};
 
 // Resize Observer to keep fit
 let observer: ResizeObserver;
 onMounted(() => {
     if (containerRef.value) {
-        observer = new ResizeObserver(() => {
-            if (props.fitMode && props.fitMode !== 'manual') {
-                applyFit(props.fitMode);
-            }
-        });
+        const handleResize = debounce(() => {
+             updateBaseScale();
+             if (props.fitMode && props.fitMode !== 'manual') {
+                 applyFit(props.fitMode);
+             }
+        }, 100);
+
+        observer = new ResizeObserver(handleResize);
         observer.observe(containerRef.value);
     }
 });
