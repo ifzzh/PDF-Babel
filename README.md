@@ -219,6 +219,30 @@ docker compose down
 docker compose up -d --no-build
 ```
 
+### 离线资产包（Release 下载）
+
+如果目标机器网络不稳定，可使用离线资产包（fonts/models/cmaps）：
+
+**使用 GitHub CLI 下载（推荐）**
+
+```bash
+# 先登录一次
+gh auth login
+
+# 下载指定 Release 的离线包
+gh release download assets-YYYY-MM-DD \
+  --repo ifzzh/PDF-Babel \
+  --pattern "offline_assets_*.zip" \
+  --dir ./data/assets
+```
+
+**恢复离线资产包**
+
+```bash
+docker compose exec backend \
+  python -m babeldoc.main --restore-offline-assets /data/assets/offline_assets_*.zip
+```
+
 > [!NOTE]
 > This CLI is mainly for debugging purposes. Although end users can use this CLI to translate files, we do not provide any technical support for this purpose.
 >
