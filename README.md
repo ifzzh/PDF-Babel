@@ -243,6 +243,36 @@ docker compose exec backend \
   python -m babeldoc.main --restore-offline-assets /data/assets/offline_assets_*.zip
 ```
 
+### 离线资产包（先恢复，再启动 Compose）
+
+以下流程可直接复制执行，适用于**先恢复离线资产**，再用 `docker compose up -d` 启动服务：
+
+```bash
+# 进入项目目录
+cd /home/ifzzh/Project/PDF-Babel
+
+# 准备目录
+mkdir -p ./data/assets ./data/babeldoc-cache
+
+# 下载离线包（示例 tag）
+gh release download assets-YYYY-MM-DD \
+  --repo ifzzh/PDF-Babel \
+  --pattern "offline_assets_*.zip" \
+  --dir ./data/assets
+
+# 先恢复离线资产到缓存目录（只需做一次）
+docker run --rm \
+  -v $PWD/data/assets:/data/assets \
+  -v $PWD/data/babeldoc-cache:/root/.cache/babeldoc \
+  ifzzh520/pdf-babel-backend:1.1.3 \
+  python -m babeldoc.main --restore-offline-assets /data/assets/offline_assets_*.zip
+
+# 最后启动（不需要再次恢复）
+docker compose up -d
+```
+
+> 注意：`docker-compose.yml` 已挂载 `./data/babeldoc-cache:/root/.cache/babeldoc`，保证缓存持久化。
+
 > [!NOTE]
 > This CLI is mainly for debugging purposes. Although end users can use this CLI to translate files, we do not provide any technical support for this purpose.
 >

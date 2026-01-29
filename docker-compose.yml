@@ -11,6 +11,7 @@ services:
       - BABELDOC_TIMEZONE=Asia/Shanghai
     volumes:
       - ./data:/data
+      - ./data/babeldoc-cache:/root/.cache/babeldoc
     restart: unless-stopped
 
   frontend:
