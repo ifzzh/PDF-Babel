@@ -46,40 +46,19 @@
                         No matches found for "{{ searchQuery }}"
                     </td>
                 </tr>
-                <tr v-for="(row, idx) in paginatedRows" :key="idx" class="hover:bg-blue-50/50 transition-colors">
+                <tr v-for="(row, idx) in filteredRows" :key="idx" class="hover:bg-blue-50/50 transition-colors">
                     <td class="px-6 py-3 font-mono text-gray-800 select-all">{{ row.source }}</td>
                     <td class="px-6 py-3 font-mono text-gray-800 select-all">{{ row.target }}</td>
                 </tr>
             </tbody>
         </table>
     </div>
-
-    <!-- Pagination -->
-    <div v-if="totalPages > 1" class="border-t p-3 flex items-center justify-between bg-gray-50">
-        <button 
-           @click="page > 1 && page--" 
-           :disabled="page <= 1"
-           class="p-2 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-           <ChevronLeft class="w-4 h-4" />
-        </button>
-        <span class="text-xs text-gray-600 font-medium">
-            Page {{ page }} of {{ totalPages }}
-        </span>
-        <button 
-           @click="page < totalPages && page++" 
-           :disabled="page >= totalPages"
-           class="p-2 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-           <ChevronRight class="w-4 h-4" />
-        </button>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
-import { Search, ChevronLeft, ChevronRight } from 'lucide-vue-next';
+import { Search } from 'lucide-vue-next';
 import Papa from 'papaparse';
 import axios from 'axios';
 import type { JobFile } from '../types';
@@ -97,8 +76,6 @@ const loading = ref(false);
 const error = ref('');
 const allRows = ref<TermRow[]>([]);
 const searchQuery = ref('');
-const page = ref(1);
-const pageSize = 50;
 
 // Need to handle potential header variations if any, but standard is Source,Target usually?
 // Actually backend produces specific CSV. Assuming no headers or standard headers.
@@ -115,7 +92,6 @@ const loadCsv = async () => {
     loading.value = true;
     error.value = '';
     searchQuery.value = '';
-    page.value = 1;
 
     try {
         const res = await axios.get(props.file.url, { responseType: 'blob' });
@@ -182,16 +158,6 @@ const filteredRows = computed(() => {
         // AND logic: all terms must appear in either source or target (combined)
         return terms.every(term => s.includes(term) || t.includes(term));
     });
-});
-
-// Reset page on search
-watch(searchQuery, () => page.value = 1);
-
-// Pagination
-const totalPages = computed(() => Math.ceil(filteredRows.value.length / pageSize));
-const paginatedRows = computed(() => {
-    const start = (page.value - 1) * pageSize;
-    return filteredRows.value.slice(start, start + pageSize);
 });
 
 </script>

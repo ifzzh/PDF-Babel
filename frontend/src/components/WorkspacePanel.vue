@@ -30,11 +30,11 @@
         </div>
 
         <!-- Result Files -->
-        <div v-if="resultFiles && resultFiles.length > 0">
+        <div v-if="filteredResultFiles && filteredResultFiles.length > 0">
           <h4 class="px-2 mb-2 text-xs font-medium text-gray-500 uppercase">Results</h4>
           <div class="space-y-1">
             <button 
-              v-for="file in resultFiles" 
+              v-for="file in filteredResultFiles" 
               :key="file.file_id"
               @click="selectFile({ type: 'result', file: file })"
               class="w-full text-left px-3 py-2 rounded-md text-sm transition-colors"
@@ -77,43 +77,98 @@
     <!-- Main Preview Area -->
     <div class="flex-1 flex flex-col bg-gray-200 relative overflow-hidden">
       <!-- Top Bar -->
-      <div v-if="activeItem" class="bg-white border-b px-4 py-2 flex items-center justify-between shadow-sm z-10">
-         <h3 class="font-medium text-sm text-gray-700">{{ activeItem.file.name || activeItem.file.filename }}</h3>
-         <a 
-           :href="activeUrl" 
-           :download="activeItem.file.name || activeItem.file.filename"
-           class="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
-         >
-           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-           Download
-         </a>
+      <div v-if="activeItem" class="bg-white border-b px-4 py-2 flex items-center justify-between shadow-sm z-10 space-x-4">
+         <!-- Left: Filename -->
+         <h3 class="font-medium text-sm text-gray-700 truncate min-w-0 flex-1">{{ activeItem.file.name || activeItem.file.filename }}</h3>
+         
+         <!-- Center: Zoom Controls -->
+         <div class="flex items-center gap-1 border rounded-md p-0.5 bg-gray-50 flex-shrink-0">
+             <button @click="zoomOut" class="p-1 hover:bg-gray-200 rounded text-gray-600" title="Zoom Out">
+                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" /></svg>
+             </button>
+             
+             <div class="relative flex items-center">
+                 <input 
+                    v-model.lazy="zoomInputValue"
+                    @change="handleZoomInput"
+                    type="text" 
+                    class="w-8 text-center text-xs font-mono bg-transparent outline-none p-0"
+                 >
+                 <span class="text-[10px] text-gray-400 select-none">%</span>
+             </div>
+             
+             <button @click="zoomIn" class="p-1 hover:bg-gray-200 rounded text-gray-600" title="Zoom In">
+                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+             </button>
+         </div>
+
+         <!-- Right: Actions -->
+         <div class="flex items-center gap-2 flex-shrink-0">
+             <!-- Fit Mode Toggle -->
+             <button 
+                @click="toggleFitMode"
+                class="flex items-center gap-1 px-2 py-1.5 text-xs font-medium rounded border transition-colors bg-white hover:bg-gray-50 text-gray-700 w-24 justify-center"
+                title="Toggle Fit Mode"
+             >
+                <svg v-if="fitMode === 'height'" class="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
+                <svg v-else class="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                <span>{{ fitMode === 'height' ? 'Fit Height' : 'Fit Width' }}</span>
+             </button>
+
+             <!-- Maximize Button -->
+             <button 
+                @click="isModalOpen = true"
+                class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                title="Maximize Preview"
+             >
+                <Maximize class="w-4 h-4" />
+             </button>
+
+             <a 
+               :href="activeUrl" 
+               :download="activeItem.file.name || activeItem.file.filename"
+               class="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
+             >
+               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+               Download
+             </a>
+         </div>
       </div>
 
       <!-- Preview Content -->
-      <div class="flex-1 relative w-full h-full">
-         <iframe 
-           v-if="activeUrl && isPdf"
-           :src="activeUrl + '#toolbar=0'"
-           class="w-full h-full border-none"
-         ></iframe>
-         
-         <div v-else-if="activeUrl" class="w-full h-full flex flex-col items-center justify-center text-gray-500 bg-gray-50">
-            <p class="mb-2">Preview not available for this file type.</p>
-            <a :href="activeUrl" download class="text-blue-600 hover:underline text-sm">Download to view</a>
-         </div>
-
-         <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
-            Select a file to preview
-         </div>
+      <div class="flex-1 relative w-full h-full border-t border-gray-200">
+          <UnifiedPreview 
+             v-if="activeItem"
+             :file="activeItem.file" 
+             :url="activeUrl || undefined"
+             :file-name="activeItem.file.name || activeItem.file.filename"
+             v-model:scale="zoomLevel"
+             v-model:fitMode="fitMode"
+          />
+          <div v-else class="w-full h-full flex items-center justify-center text-gray-400 bg-gray-50">
+             Select a file to preview
+          </div>
       </div>
     </div>
   </div>
+
+  <!-- Fullscreen Modal -->
+  <PreviewModal 
+     :is-open="isModalOpen"
+     :file="activeItem?.file"
+     :url="activeUrl || ''"
+     @close="isModalOpen = false"
+  />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue';
+import { Maximize } from 'lucide-vue-next';
 import type { JobFile } from '../types';
 import CircularStageProgress from './CircularStageProgress.vue';
+
+import PreviewModal from './PreviewModal.vue';
+import UnifiedPreview from './UnifiedPreview.vue';
 
 const props = defineProps<{
   sourceFile: File | null;
@@ -129,7 +184,48 @@ interface ActiveItem {
   file: any;
 }
 
+const isModalOpen = ref(false);
 const activeItem = ref<ActiveItem | null>(null);
+
+// Zoom State
+const zoomLevel = ref(1.0);
+const fitMode = ref<'width' | 'height' | 'manual'>('height');
+const zoomInputValue = ref('100');
+
+// Sync zoom input with level
+watch(zoomLevel, (val) => {
+    zoomInputValue.value = Math.round(val * 100).toString();
+});
+
+const handleZoomInput = () => {
+    const val = parseFloat(zoomInputValue.value);
+    if (!isNaN(val)) {
+        zoomLevel.value = Math.min(Math.max(val / 100, 0.1), 5.0);
+        if (fitMode.value !== 'manual') fitMode.value = 'manual';
+    } else {
+        zoomInputValue.value = Math.round(zoomLevel.value * 100).toString();
+    }
+};
+
+const zoomIn = () => {
+    zoomLevel.value = Math.min(zoomLevel.value + 0.1, 5.0);
+    if (fitMode.value !== 'manual') fitMode.value = 'manual';
+};
+
+const zoomOut = () => {
+    zoomLevel.value = Math.max(zoomLevel.value - 0.1, 0.1);
+    if (fitMode.value !== 'manual') fitMode.value = 'manual';
+};
+
+const toggleFitMode = () => {
+    fitMode.value = fitMode.value === 'height' ? 'width' : 'height';
+};
+
+const filteredResultFiles = computed(() => {
+  if (!props.resultFiles) return [];
+  // Exclude 'original' type files from the results list as they are shown in Source section
+  return props.resultFiles.filter(f => f.type !== 'original');
+});
 
 const activeUrl = computed(() => {
   if (!activeItem.value) return null;
