@@ -117,9 +117,9 @@
 
              <!-- Maximize Button -->
              <button 
-                @click="isModalOpen = true"
+                @click="goToHistory"
                 class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                title="Maximize Preview"
+                title="View Full Detail"
              >
                 <Maximize class="w-4 h-4" />
              </button>
@@ -144,7 +144,7 @@
              :file-name="activeItem.file.name || activeItem.file.filename"
              v-model:scale="zoomLevel"
              v-model:fitMode="fitMode"
-
+             @update:baseScale="(val) => baseScale = val"
           />
           <div v-else class="w-full h-full flex items-center justify-center text-gray-400 bg-gray-50">
              Select a file to preview
@@ -164,6 +164,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { Maximize } from 'lucide-vue-next';
 import type { JobFile } from '../types';
 import CircularStageProgress from './CircularStageProgress.vue';
@@ -177,6 +178,8 @@ const props = defineProps<{
   job: any; // Using any for simplicity as Job type might need update or mapped from useJob
 }>();
 
+const router = useRouter();
+
 // State for local object URLs to revoke them later
 const objectUrls = new Set<string>();
 
@@ -188,33 +191,48 @@ interface ActiveItem {
 const isModalOpen = ref(false);
 const activeItem = ref<ActiveItem | null>(null);
 
+const goToHistory = () => {
+    if (props.job && props.job.id) {
+        router.push({ name: 'task-detail', params: { id: props.job.id } });
+    }
+};
+
 // Zoom State
 const zoomLevel = ref(1.0);
 const fitMode = ref<'width' | 'height' | 'manual'>('height');
 const zoomInputValue = ref('100');
+const baseScale = ref(1.0); // The scale factor corresponding to "100%" (Fit Height)
 
 // Sync zoom input with level
-watch(zoomLevel, (val) => {
-    zoomInputValue.value = Math.round(val * 100).toString();
+watch([zoomLevel, baseScale], () => {
+    // Displayed % = (Absolute Scale / Base Scale) * 100
+    const pct = (zoomLevel.value / baseScale.value) * 100;
+    zoomInputValue.value = Math.round(pct).toString();
 });
 
 const handleZoomInput = () => {
     const val = parseFloat(zoomInputValue.value);
     if (!isNaN(val)) {
-        zoomLevel.value = Math.min(Math.max(val / 100, 0.1), 5.0);
+        // Absolute Scale = (Display % / 100) * Base Scale
+        const targetScale = (val / 100) * baseScale.value;
+        zoomLevel.value = Math.min(Math.max(targetScale, 0.1), 5.0);
         if (fitMode.value !== 'manual') fitMode.value = 'manual';
     } else {
-        zoomInputValue.value = Math.round(zoomLevel.value * 100).toString();
+        const pct = (zoomLevel.value / baseScale.value) * 100;
+        zoomInputValue.value = Math.round(pct).toString();
     }
 };
 
 const zoomIn = () => {
-    zoomLevel.value = Math.min(zoomLevel.value + 0.1, 5.0);
+    // Increase by 10% of the base scale
+    const step = 0.1 * baseScale.value;
+    zoomLevel.value = Math.min(zoomLevel.value + step, 5.0);
     if (fitMode.value !== 'manual') fitMode.value = 'manual';
 };
 
 const zoomOut = () => {
-    zoomLevel.value = Math.max(zoomLevel.value - 0.1, 0.1);
+    const step = 0.1 * baseScale.value;
+    zoomLevel.value = Math.max(zoomLevel.value - step, 0.1);
     if (fitMode.value !== 'manual') fitMode.value = 'manual';
 };
 
