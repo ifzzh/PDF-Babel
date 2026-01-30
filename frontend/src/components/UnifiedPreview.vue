@@ -89,8 +89,8 @@ const currentScale = computed({
     set: (val) => emit('update:scale', val)
 });
 
-const setCanvasRef = (pageNum: number) => (el: HTMLCanvasElement | null) => {
-    if (el) {
+const setCanvasRef = (pageNum: number) => (el: any) => {
+    if (el instanceof HTMLCanvasElement) {
         canvasMap.set(pageNum, el);
     } else {
         canvasMap.delete(pageNum);

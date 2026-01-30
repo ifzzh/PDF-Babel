@@ -268,12 +268,6 @@ const activeUrl = computed(() => {
   }
 });
 
-const isPdf = computed(() => {
-  if (!activeItem.value) return false;
-  const name = activeItem.value.file.name || activeItem.value.file.filename;
-  return name.toLowerCase().endsWith('.pdf');
-});
-
 const selectFile = (item: ActiveItem) => {
   activeItem.value = item;
 };

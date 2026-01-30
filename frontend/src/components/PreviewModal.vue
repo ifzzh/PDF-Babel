@@ -100,7 +100,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { X, DownloadCloud, FileText, BookOpen, Maximize } from 'lucide-vue-next';
 import UnifiedPreview from './UnifiedPreview.vue';
 
