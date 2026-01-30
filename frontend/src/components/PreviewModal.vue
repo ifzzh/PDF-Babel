@@ -75,6 +75,7 @@
                :file-name="file?.filename || file?.name"
                v-model:scale="zoomLevel"
                v-model:fitMode="fitMode"
+               @update:baseScale="(val) => baseScale = val"
            />
        </div>
 
@@ -100,29 +101,35 @@ const emit = defineEmits(['close']);
 const zoomLevel = ref(1.0);
 const fitMode = ref<'width' | 'height' | 'manual'>('height');
 const zoomInputValue = ref('100');
+const baseScale = ref(1.0);
 
 // Sync zoom input with level
-watch(zoomLevel, (val) => {
-    zoomInputValue.value = Math.round(val * 100).toString();
+watch([zoomLevel, baseScale], () => {
+    const pct = baseScale.value > 0 ? (zoomLevel.value / baseScale.value) * 100 : zoomLevel.value * 100;
+    zoomInputValue.value = Math.round(pct).toString();
 });
 
 const handleZoomInput = () => {
     const val = parseFloat(zoomInputValue.value);
     if (!isNaN(val)) {
-        zoomLevel.value = Math.min(Math.max(val / 100, 0.1), 5.0);
+        const targetScale = baseScale.value > 0 ? (val / 100) * baseScale.value : val / 100;
+        zoomLevel.value = Math.min(Math.max(targetScale, 0.1), 5.0);
         if (fitMode.value !== 'manual') fitMode.value = 'manual';
     } else {
-        zoomInputValue.value = Math.round(zoomLevel.value * 100).toString();
+        const pct = baseScale.value > 0 ? (zoomLevel.value / baseScale.value) * 100 : zoomLevel.value * 100;
+        zoomInputValue.value = Math.round(pct).toString();
     }
 };
 
 const zoomIn = () => {
-    zoomLevel.value = Math.min(zoomLevel.value + 0.1, 5.0);
+    const step = 0.1 * (baseScale.value || 1.0);
+    zoomLevel.value = Math.min(zoomLevel.value + step, 5.0);
     if (fitMode.value !== 'manual') fitMode.value = 'manual';
 };
 
 const zoomOut = () => {
-    zoomLevel.value = Math.max(zoomLevel.value - 0.1, 0.1);
+    const step = 0.1 * (baseScale.value || 1.0);
+    zoomLevel.value = Math.max(zoomLevel.value - step, 0.1);
     if (fitMode.value !== 'manual') fitMode.value = 'manual';
 };
 

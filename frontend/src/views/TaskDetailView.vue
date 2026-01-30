@@ -106,9 +106,39 @@
             
             <div v-else class="flex-1 flex flex-col h-full">
                 <!-- Toolbar -->
-                <div class="bg-white border-b px-4 py-2 flex items-center justify-between shadow-sm z-10">
+                <div class="bg-white border-b px-4 py-2 flex items-center justify-between shadow-sm z-10 space-x-4">
                     <div class="text-sm font-medium text-gray-700 truncate max-w-md">{{ previewFile.filename }}</div>
                     <div class="flex items-center gap-2">
+                        <!-- Zoom Controls -->
+                        <div class="flex items-center gap-1 border rounded-md p-0.5 bg-gray-50 flex-shrink-0">
+                            <button @click="zoomOut" class="p-1 hover:bg-gray-200 rounded text-gray-600" title="Zoom Out">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" /></svg>
+                            </button>
+                            <div class="relative flex items-center">
+                                <input 
+                                   v-model.lazy="zoomInputValue"
+                                   @change="handleZoomInput"
+                                   type="text" 
+                                   class="w-8 text-center text-xs font-mono bg-transparent outline-none p-0"
+                                >
+                                <span class="text-[10px] text-gray-400 select-none">%</span>
+                            </div>
+                            <button @click="zoomIn" class="p-1 hover:bg-gray-200 rounded text-gray-600" title="Zoom In">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                            </button>
+                        </div>
+
+                        <!-- Fit Mode Toggle -->
+                        <button 
+                           @click="toggleFitMode"
+                           class="flex items-center gap-1 px-2 py-1.5 text-xs font-medium rounded border transition-colors bg-white hover:bg-gray-50 text-gray-700 w-24 justify-center"
+                           title="Toggle Fit Mode"
+                        >
+                           <svg v-if="fitMode === 'height'" class="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
+                           <svg v-else class="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                           <span>{{ fitMode === 'height' ? 'Fit Height' : 'Fit Width' }}</span>
+                        </button>
+
                         <a 
                             :href="previewFile.url" 
                             download
@@ -122,26 +152,17 @@
                     </div>
                 </div>
                 
-                <!-- PDF Viewer (iframe) -->
+                <!-- Preview -->
                 <div class="flex-1 bg-gray-200 overflow-hidden relative flex flex-col">
-                     <!-- Glossary Preview -->
-                     <GlossaryTable 
-                        v-if="previewFile && previewFile.type === 'glossary'"
+                     <UnifiedPreview 
+                        v-if="previewFile"
                         :file="previewFile"
-                        class="w-full h-full"
+                        :url="previewFile.url"
+                        :file-name="previewFile.filename"
+                        v-model:scale="zoomLevel"
+                        v-model:fitMode="fitMode"
+                        @update:baseScale="(val) => baseScale = val"
                      />
-                     <!-- PDF Preview -->
-                     <template v-else-if="previewFile">
-                        <iframe 
-                            v-if="isPreviewable(previewFile)"
-                            :src="previewFile.url + '#toolbar=0'"
-                            class="w-full h-full border-none"
-                        ></iframe>
-                        <div v-else class="flex-1 flex flex-col items-center justify-center h-full text-gray-500">
-                            <p class="mb-2">Preview not available for this file type.</p>
-                            <a :href="previewFile.url" download class="text-blue-600 underline text-sm">Download to view</a>
-                        </div>
-                     </template>
                 </div>
             </div>
         </main>
@@ -150,11 +171,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { fetchJob, fetchJobFiles } from '../api';
-import GlossaryTable from '../components/GlossaryTable.vue';
 import { BookOpen } from 'lucide-vue-next';
+import UnifiedPreview from '../components/UnifiedPreview.vue';
 import type { Job, JobFile } from '../types';
 
 const route = useRoute();
@@ -164,6 +185,45 @@ const loading = ref(true);
 const job = ref<Job | null>(null);
 const files = ref<JobFile[]>([]);
 const previewFile = ref<JobFile | null>(null);
+
+// Zoom state (match Home preview behavior)
+const zoomLevel = ref(1.0);
+const fitMode = ref<'width' | 'height' | 'manual'>('height');
+const zoomInputValue = ref('100');
+const baseScale = ref(1.0);
+
+watch([zoomLevel, baseScale], () => {
+    const pct = (zoomLevel.value / baseScale.value) * 100;
+    zoomInputValue.value = Math.round(pct).toString();
+});
+
+const handleZoomInput = () => {
+    const val = parseFloat(zoomInputValue.value);
+    if (!isNaN(val)) {
+        const targetScale = (val / 100) * baseScale.value;
+        zoomLevel.value = Math.min(Math.max(targetScale, 0.1), 5.0);
+        if (fitMode.value !== 'manual') fitMode.value = 'manual';
+    } else {
+        const pct = (zoomLevel.value / baseScale.value) * 100;
+        zoomInputValue.value = Math.round(pct).toString();
+    }
+};
+
+const zoomIn = () => {
+    const step = 0.1 * baseScale.value;
+    zoomLevel.value = Math.min(zoomLevel.value + step, 5.0);
+    if (fitMode.value !== 'manual') fitMode.value = 'manual';
+};
+
+const zoomOut = () => {
+    const step = 0.1 * baseScale.value;
+    zoomLevel.value = Math.max(zoomLevel.value - step, 0.1);
+    if (fitMode.value !== 'manual') fitMode.value = 'manual';
+};
+
+const toggleFitMode = () => {
+    fitMode.value = fitMode.value === 'height' ? 'width' : 'height';
+};
 
 const jobName = computed(() => {
     if (!job.value) return 'Loading...';
@@ -223,11 +283,6 @@ const loadData = async () => {
 
 const selectFile = (file: JobFile) => {
     previewFile.value = file;
-};
-
-const isPreviewable = (file: JobFile) => {
-    return file.filename.toLowerCase().endsWith('.pdf') || 
-           file.url?.toLowerCase().endsWith('.pdf');
 };
 
 const formatSize = (bytes: number) => {
