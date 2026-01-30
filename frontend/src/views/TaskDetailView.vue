@@ -106,50 +106,58 @@
             
             <div v-else class="flex-1 flex flex-col h-full">
                 <!-- Toolbar -->
-                <div class="bg-white border-b px-4 py-2 flex items-center justify-between shadow-sm z-10 space-x-4">
-                    <div class="text-sm font-medium text-gray-700 truncate max-w-md">{{ previewFile.filename }}</div>
-                    <div class="flex items-center gap-2">
-                        <!-- Zoom Controls -->
-                        <div class="flex items-center gap-1 border rounded-md p-0.5 bg-gray-50 flex-shrink-0">
-                            <button @click="zoomOut" class="p-1 hover:bg-gray-200 rounded text-gray-600" title="Zoom Out">
-                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" /></svg>
-                            </button>
-                            <div class="relative flex items-center">
-                                <input 
-                                   v-model.lazy="zoomInputValue"
-                                   @change="handleZoomInput"
-                                   type="text" 
-                                   class="w-8 text-center text-xs font-mono bg-transparent outline-none p-0"
-                                >
-                                <span class="text-[10px] text-gray-400 select-none">%</span>
-                            </div>
-                            <button @click="zoomIn" class="p-1 hover:bg-gray-200 rounded text-gray-600" title="Zoom In">
-                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-                            </button>
-                        </div>
+                <div class="bg-white border-b px-4 py-2 flex items-center justify-between shadow-sm z-10 relative h-12">
+                     <!-- Left: Filename -->
+                     <div class="flex-1 min-w-0 mr-4 flex justify-start">
+                         <div class="text-sm font-medium text-gray-700 truncate" :title="previewFile.filename">{{ previewFile.filename }}</div>
+                     </div>
 
-                        <!-- Fit Mode Toggle -->
-                        <button 
-                           @click="toggleFitMode"
-                           class="flex items-center gap-1 px-2 py-1.5 text-xs font-medium rounded border transition-colors bg-white hover:bg-gray-50 text-gray-700 w-24 justify-center"
-                           title="Toggle Fit Mode"
-                        >
-                           <svg v-if="fitMode === 'height'" class="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
-                           <svg v-else class="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
-                           <span>{{ fitMode === 'height' ? 'Fit Height' : 'Fit Width' }}</span>
-                        </button>
+                     <!-- Center: Fit Mode & Zoom Controls -->
+                     <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-3">
+                         <!-- Fit Mode Toggle -->
+                         <button 
+                            @click="toggleFitMode"
+                            class="flex items-center gap-1 px-2 py-1.5 text-xs font-medium rounded border transition-colors bg-white hover:bg-gray-50 text-gray-700 w-24 justify-center"
+                            title="Toggle Fit Mode"
+                         >
+                            <svg v-if="fitMode === 'height'" class="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
+                            <svg v-else class="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                            <span>{{ fitMode === 'height' ? 'Fit Height' : 'Fit Width' }}</span>
+                         </button>
 
-                        <a 
-                            :href="previewFile.url" 
-                            download
-                            class="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition-colors flex items-center gap-1"
-                        >
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                            </svg>
-                            Download
-                        </a>
-                    </div>
+                         <!-- Zoom Controls -->
+                         <div class="flex items-center gap-1 border rounded-md p-0.5 bg-gray-50 flex-shrink-0">
+                             <button @click="zoomOut" class="p-1 hover:bg-gray-200 rounded text-gray-600" title="Zoom Out">
+                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" /></svg>
+                             </button>
+                             <div class="relative flex items-center">
+                                 <input 
+                                    v-model.lazy="zoomInputValue"
+                                    @change="handleZoomInput"
+                                    type="text" 
+                                    class="w-8 text-center text-xs font-mono bg-transparent outline-none p-0"
+                                 >
+                                 <span class="text-[10px] text-gray-400 select-none">%</span>
+                             </div>
+                             <button @click="zoomIn" class="p-1 hover:bg-gray-200 rounded text-gray-600" title="Zoom In">
+                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                             </button>
+                         </div>
+                     </div>
+
+                     <!-- Right: Actions -->
+                     <div class="flex items-center gap-2 flex-1 justify-end">
+                         <a 
+                             :href="previewFile.url" 
+                             download
+                             class="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition-colors flex items-center gap-1"
+                         >
+                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                             </svg>
+                             Download
+                         </a>
+                     </div>
                 </div>
                 
                 <!-- Preview -->

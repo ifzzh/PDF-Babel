@@ -77,33 +77,16 @@
     <!-- Main Preview Area -->
     <div class="flex-1 flex flex-col bg-gray-200 relative overflow-hidden">
       <!-- Top Bar -->
-      <div v-if="activeItem" class="bg-white border-b px-4 py-2 flex items-center justify-between shadow-sm z-10 space-x-4">
+      <div v-if="activeItem" class="bg-white border-b px-4 py-2 flex items-center justify-between shadow-sm z-10 relative h-12">
          <!-- Left: Filename -->
-         <h3 class="font-medium text-sm text-gray-700 truncate min-w-0 flex-1">{{ activeItem.file.name || activeItem.file.filename }}</h3>
-         
-         <!-- Center: Zoom Controls -->
-         <div class="flex items-center gap-1 border rounded-md p-0.5 bg-gray-50 flex-shrink-0">
-             <button @click="zoomOut" class="p-1 hover:bg-gray-200 rounded text-gray-600" title="Zoom Out">
-                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" /></svg>
-             </button>
-             
-             <div class="relative flex items-center">
-                 <input 
-                    v-model.lazy="zoomInputValue"
-                    @change="handleZoomInput"
-                    type="text" 
-                    class="w-8 text-center text-xs font-mono bg-transparent outline-none p-0"
-                 >
-                 <span class="text-[10px] text-gray-400 select-none">%</span>
-             </div>
-             
-             <button @click="zoomIn" class="p-1 hover:bg-gray-200 rounded text-gray-600" title="Zoom In">
-                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-             </button>
+         <div class="flex-1 min-w-0 mr-4 flex justify-start">
+             <h3 class="font-medium text-sm text-gray-700 truncate" :title="activeItem.file.name || activeItem.file.filename">
+                 {{ activeItem.file.name || activeItem.file.filename }}
+             </h3>
          </div>
-
-         <!-- Right: Actions -->
-         <div class="flex items-center gap-2 flex-shrink-0">
+         
+         <!-- Center: Fit Mode & Zoom Controls -->
+         <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-3">
              <!-- Fit Mode Toggle -->
              <button 
                 @click="toggleFitMode"
@@ -115,6 +98,30 @@
                 <span>{{ fitMode === 'height' ? 'Fit Height' : 'Fit Width' }}</span>
              </button>
 
+             <!-- Zoom Controls -->
+             <div class="flex items-center gap-1 border rounded-md p-0.5 bg-gray-50 flex-shrink-0">
+                 <button @click="zoomOut" class="p-1 hover:bg-gray-200 rounded text-gray-600" title="Zoom Out">
+                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" /></svg>
+                 </button>
+                 
+                 <div class="relative flex items-center">
+                     <input 
+                        v-model.lazy="zoomInputValue"
+                        @change="handleZoomInput"
+                        type="text" 
+                        class="w-8 text-center text-xs font-mono bg-transparent outline-none p-0"
+                     >
+                     <span class="text-[10px] text-gray-400 select-none">%</span>
+                 </div>
+                 
+                 <button @click="zoomIn" class="p-1 hover:bg-gray-200 rounded text-gray-600" title="Zoom In">
+                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                 </button>
+             </div>
+         </div>
+
+         <!-- Right: Actions -->
+         <div class="flex items-center gap-2 flex-1 justify-end">
              <!-- Maximize Button -->
              <button 
                 @click="goToHistory"
