@@ -75,7 +75,7 @@
     </div>
 
     <!-- Main Preview Area -->
-    <div class="flex-1 flex flex-col bg-gray-200 relative overflow-hidden">
+    <div class="flex-1 min-w-0 flex flex-col bg-gray-200 relative overflow-hidden">
       <!-- Top Bar -->
       <div v-if="activeItem" class="bg-white border-b px-4 py-2 flex items-center justify-between shadow-sm z-10 relative h-12">
          <!-- Left: Filename -->
