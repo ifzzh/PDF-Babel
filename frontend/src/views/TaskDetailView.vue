@@ -29,7 +29,7 @@
     
     <div class="flex-1 flex overflow-hidden">
         <!-- Sidebar: File List -->
-        <aside class="w-1/3 min-w-[300px] max-w-md bg-white border-r flex flex-col shrink-0">
+        <aside class="w-[280px] min-w-[240px] max-w-[320px] bg-white border-r flex flex-col shrink-0">
             <div class="p-4 border-b bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Files
             </div>
