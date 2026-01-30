@@ -45,6 +45,7 @@
        :isOpen="!!previewFile" 
        :file="previewFile" 
        :url="previewFile?.url || ''"
+       :jobId="selectedJobId"
        @close="previewFile = null" 
     />
 

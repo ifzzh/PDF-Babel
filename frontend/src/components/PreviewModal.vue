@@ -55,6 +55,17 @@
           
           <!-- Right: Actions -->
           <div class="flex items-center gap-3 flex-1 justify-end">
+             <!-- Maximize Button -->
+             <router-link 
+                v-if="jobId"
+                :to="{ name: 'task-detail', params: { id: jobId }, query: { fileId: file?.file_id } }"
+                class="p-2 hover:bg-gray-100 rounded-full text-gray-500 hover:text-blue-600 transition-colors"
+                title="Open in Full Page"
+                @click="$emit('close')"
+             >
+                <Maximize class="w-5 h-5" />
+             </router-link>
+
              <!-- Download -->
              <a 
                 v-if="url"
@@ -90,7 +101,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { X, DownloadCloud, FileText, BookOpen } from 'lucide-vue-next';
+import { X, DownloadCloud, FileText, BookOpen, Maximize } from 'lucide-vue-next';
 import UnifiedPreview from './UnifiedPreview.vue';
 
 
@@ -98,6 +109,7 @@ const props = defineProps<{
   file: any; // JobFile or File
   url: string;
   isOpen: boolean;
+  jobId?: string;
 }>();
 
 const emit = defineEmits(['close']);
