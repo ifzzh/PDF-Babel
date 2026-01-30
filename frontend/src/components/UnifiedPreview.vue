@@ -113,8 +113,8 @@ const handleWheel = (e: WheelEvent) => {
 const updateBaseScale = () => {
     if (!containerRef.value) return;
     const base = pageBaseSize.value ?? { width: 800, height: 1132 };
-    // Subtract explicit buffer to prevent subpixel overflow (increased to 60px for safety)
-    const ch = containerRef.value.clientHeight - 60;
+    // Base Scale = Scale to fit height (100% view)
+    const ch = containerRef.value.clientHeight;
     // Base Scale = Scale to fit height (100% view)
     if (base.height > 0) {
         emit('update:baseScale', ch / base.height);
@@ -126,7 +126,7 @@ const calcFitScale = (mode: 'width' | 'height') => {
     const base = pageBaseSize.value ?? { width: 800, height: 1132 };
     // Remove padding subtraction to fill the container
     const cw = containerRef.value.clientWidth; 
-    const ch = containerRef.value.clientHeight - 60;
+    const ch = containerRef.value.clientHeight;
     
     // Safety check for zero dimensions
     if (cw <= 0 || ch <= 0) return 1.0;
