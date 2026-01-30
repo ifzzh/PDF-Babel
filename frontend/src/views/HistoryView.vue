@@ -41,10 +41,10 @@
     </div>
     
     <!-- PDF Preview Overlay -->
-    <PdfPreview 
+    <PreviewModal 
        :isOpen="!!previewFile" 
        :file="previewFile" 
-       :jobId="selectedJobId"
+       :url="previewFile?.url || ''"
        @close="previewFile = null" 
     />
 
@@ -56,7 +56,7 @@ import { ref } from 'vue';
 import { ArrowLeft, X } from 'lucide-vue-next';
 import HistoryList from '../components/HistoryList.vue';
 import ResultList from '../components/ResultList.vue';
-import PdfPreview from '../components/PdfPreview.vue';
+import PreviewModal from '../components/PreviewModal.vue';
 import { fetchJobFiles } from '../api';
 import type { JobFile } from '../types';
 
