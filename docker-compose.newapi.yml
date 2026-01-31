@@ -1,0 +1,9 @@
+services:
+  backend:
+    networks:
+      - default
+      - newapi-net
+
+networks:
+  newapi-net:
+    external: true
