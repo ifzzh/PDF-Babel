@@ -202,6 +202,31 @@ docker push ifzzh520/pdf-babel-frontend:latest
 
 前端对外端口在 `docker-compose.yml` 中配置（当前为 `53921:80`，可根据实际端口占用调整）。
 
+### 可选：接入 new-api（跨容器访问）
+
+如果你在本机或 1Panel 部署了 `new-api`，推荐用独立网络实现容器内访问：
+
+1) 创建共享网络（一次性）：
+
+```bash
+docker network create newapi-net
+```
+
+2) 确保 `new-api` 加入 `newapi-net`，并设置别名 `newapi`  
+（1Panel 用户建议在 `/opt/1panel/apps/new-api/new-api/docker-compose.yml` 中加入 external 网络与别名，重启生效）
+
+3) 启动 PDF‑Babel 时叠加 `docker-compose.newapi.yml`：
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.newapi.yml up -d --no-build
+```
+
+4) `platform.json` 中使用：
+
+```
+http://newapi:3000/v1
+```
+
 ### 使用 Compose 更新
 
 1) 修改 `docker-compose.yml` 中的镜像版本号（例如 `1.1.1`）。
